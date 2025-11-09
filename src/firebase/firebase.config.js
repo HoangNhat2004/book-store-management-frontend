@@ -5,12 +5,12 @@ import { getAuth } from "firebase/auth"; // THÊM DÒNG NÀY
 
 // Firebase config từ project của bạn
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_API_KEY,
-  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDERID,
-  appId: import.meta.env.VITE_APPID,
+  apiKey: "AIzaSyAwqxG_k271u_YmmZ9DOgl_DP9vPkb5TGE",
+  authDomain: "book-store-management-8755e.firebaseapp.com",
+  projectId: "book-store-management-8755e",
+  storageBucket: "book-store-management-8755e.firebasestorage.app",
+  messagingSenderId: "544030678979",
+  appId: "1:544030678979:web:b9065a6733093dd214a776",
   // measurementId: import.meta.env.VITE_MEASUREMENT_ID, // Nếu dùng Analytics
 };
 
