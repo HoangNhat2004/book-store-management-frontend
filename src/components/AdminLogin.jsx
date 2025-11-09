@@ -1,111 +1,91 @@
-// src/components/AdminLogin.jsx
-import React, { useState } from 'react';
-import { useForm } from "react-hook-form";
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react'
+import { useForm } from "react-hook-form"
+
+import axios from "axios"
+import getBaseUrl from '../utils/baseURL'
+import { useNavigate } from 'react-router-dom'
 
 const AdminLogin = () => {
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const navigate = useNavigate();
+    const [message, setMessage] = useState("")
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors },
+      } = useForm()
 
-  const onSubmit = async (data) => {
-    setLoading(true);
-    setMessage("");
+      const navigate = useNavigate()
 
-    // TÀI KHOẢN ADMIN DUY NHẤT (DEMO)
-    if (data.username !== "admin" || data.password !== "admin123") {
-      setMessage("Invalid username or password");
-      setLoading(false);
-      return;
-    }
+      const onSubmit = async (data) => {
+            try {
+                const response = await axios.post(
+                    `${getBaseUrl()}/api/auth/login`,  // ĐÚNG: /login
+                    {
+                        identifier: data.username,  // Gửi email/username như identifier
+                        password: data.password
+                    },
+                    {
+                        headers: { 'Content-Type': 'application/json' }
+                    }
+                );
 
-    try {
-      // LẤY TOKEN TỪ BACKEND
-      const response = await fetch('https://book-store-backend-97tz.onrender.com/api/admin-token');
-      
-      if (!response.ok) throw new Error('Failed to get token');
+                const auth = response.data;
 
-      const { token } = await response.json();
+                if (auth.token && auth.user.role === 'admin') {
+                    localStorage.setItem('token', auth.token);
+                    localStorage.setItem('adminUser', JSON.stringify(auth.user));
 
-      // LƯU TOKEN + USER
-      localStorage.setItem('token', token);
-      localStorage.setItem('adminUser', JSON.stringify({
-        name: 'Admin User',
-        email: 'admin@example.com',
-        role: 'admin'
-      }));
+                    setTimeout(() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('adminUser');
+                        alert('Token expired! Login again.');
+                        navigate('/');
+                    }, 3600 * 1000);
 
-      // TỰ ĐỘNG ĐĂNG XUẤT SAU 1 GIỜ
-      setTimeout(() => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('adminUser');
-        alert('Session expired! Please login again.');
-        navigate('/admin-login');
-      }, 3600 * 1000);
-
-      alert("Login successful!");
-      navigate('/dashboard/orders');
-
-    } catch (error) {
-      console.error(error);
-      setMessage('Server error. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
+                    alert("Admin Login successful!");
+                    navigate('/dashboard');
+                } else {
+                    setMessage('You do not have admin rights!');
+                }
+            } catch (error) {
+                console.error(error);
+                setMessage(error.response?.data?.message || 'Invalid username/password');
+            }
+        };
   return (
-    <div className='h-screen flex justify-center items-center bg-gradient-to-br from-purple-50 to-blue-50'>
-      <div className='w-full max-w-sm mx-auto bg-white shadow-lg rounded-xl p-8'>
-        <h2 className='text-2xl font-bold text-center text-purple-700 mb-6'>Admin Login</h2>
+    <div className='h-screen flex justify-center items-center '>
+        <div className='w-full max-w-sm mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4'>
+            <h2 className='text-xl font-semibold mb-4'>Admin Dashboard Login </h2>
 
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className='mb-4'>
-            <label className='block text-gray-700 text-sm font-bold mb-2'>Username</label>
-            <input 
-              {...register("username", { required: true })} 
-              type="text" 
-              placeholder='Enter "admin"'
-              className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-purple-500'
-            />
-          </div>
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <div className='mb-4'>
+                    <label className='block text-gray-700 text-sm font-bold mb-2' htmlFor="username">Username</label>
+                    <input 
+                    {...register("username", { required: true })} 
+                    type="text" name="username" id="username" placeholder='username'
+                    className='shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow'
+                    />
+                </div>
+                <div className='mb-4'>
+                    <label className='block text-gray-700 text-sm font-bold mb-2' htmlFor="password">Password</label>
+                    <input 
+                    {...register("password", { required: true })} 
+                    type="password" name="password" id="password" placeholder='Password'
+                    className='shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow'
+                    />
+                </div>
+                {
+                    message && <p className='text-red-500 text-xs italic mb-3'>{message}</p>
+                }
+                <div className='w-full'>
+                    <button className='bg-blue-500 w-full hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none'>Login </button>
+                </div>
+            </form>
 
-          <div className='mb-6'>
-            <label className='block text-gray-700 text-sm font-bold mb-2'>Password</label>
-            <input 
-              {...register("password", { required: true })} 
-              type="password" 
-              placeholder='Enter "admin123"'
-              className='w-full px-3 py-2 border rounded-lg focus:outline-none focus:border-purple-500'
-            />
-          </div>
-
-          {message && (
-            <p className='text-red-500 text-sm text-center mb-4 p-2 bg-red-50 rounded'>
-              {message}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className='w-full py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 transition-all'
-          >
-            {loading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-
-        <div className='mt-4 text-center text-xs text-gray-500'>
-          <p>Demo Account:</p>
-          <p><strong>Username:</strong> admin</p>
-          <p><strong>Password:</strong> admin123</p>
+            <p className='mt-5 text-center text-gray-500 text-xs'>©2025 Book Store. All rights reserved.</p>
         </div>
-
-        <p className='mt-6 text-center text-xs text-gray-500'>©2025 Book Store. All rights reserved.</p>
-      </div>
     </div>
-  );
-};
+  )
+}
 
-export default AdminLogin;
+export default AdminLogin
