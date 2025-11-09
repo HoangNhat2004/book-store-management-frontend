@@ -44,7 +44,7 @@ const AdminLogin = () => {
       }, 3600 * 1000);
 
       alert("Admin Login successful!");
-      navigate('/dashboard/orders');
+      navigate('/dashboard');
 
     } catch (error) {
       setMessage('Server error. Please try again later.');
