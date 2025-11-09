@@ -17,32 +17,43 @@ const AdminLogin = () => {
       const navigate = useNavigate()
 
       const onSubmit = async (data) => {
-        // console.log(data)
-        try {
-           const response =  await axios.post(`${getBaseUrl()}/api/auth/admin`, data, {
-                headers: {
-                    'Content-Type': 'application/json',
+            try {
+                const response = await axios.post(
+                    `${getBaseUrl()}/api/auth/login`,  // ĐÚNG: /login
+                    {
+                        identifier: data.username,  // Gửi dưới dạng identifier
+                        password: data.password
+                    },
+                    {
+                        headers: { 'Content-Type': 'application/json' }
+                    }
+                );
+
+                const auth = response.data;
+
+                if (auth.token && auth.user.role === "admin") {
+                    localStorage.setItem('token', auth.token);
+                    localStorage.setItem('adminUser', JSON.stringify(auth.user));
+
+                    // Token hết hạn sau 1 giờ
+                    setTimeout(() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('adminUser');
+                        alert('Token đã hết hạn! Vui lòng đăng nhập lại.');
+                        navigate("/");
+                    }, 3600 * 1000);
+
+                    alert("Admin Login successful!");
+                    navigate("/dashboard");
+                } else {
+                    setMessage("Bạn không có quyền admin!");
                 }
-           })
-           const auth = response.data;
-        //    console.log(auth)
-            if(auth.token) {
-                localStorage.setItem('token', auth.token);
-                setTimeout(() => {
-                    localStorage.removeItem('token')
-                    alert('Token has been expired!, Please login again.');
-                    navigate("/")
-                }, 3600 * 1000)
+
+            } catch (error) {
+                console.error(error);
+                setMessage("Sai tên đăng nhập hoặc mật khẩu");
             }
-
-            alert("Admin Login successful!")
-            navigate("/dashboard")
-
-        } catch (error) {
-            setMessage("Please provide a valid email and password") 
-            console.error(error)
-        }
-      }
+        };
   return (
     <div className='h-screen flex justify-center items-center '>
         <div className='w-full max-w-sm mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4'>
