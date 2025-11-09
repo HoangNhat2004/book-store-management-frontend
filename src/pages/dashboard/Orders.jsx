@@ -7,7 +7,12 @@ const Orders = () => {
   const { data: orders = [], error, isLoading, refetch } = useGetOrdersQuery();
 
   if (isLoading) return <Loading />;
-  if (error) return <div className="text-red-500 text-center p-6">Failed to load orders</div>;
+  if (error) {
+    console.error("API Error:", error); // ← XEM LỖI CHI TIẾT TRONG CONSOLE
+    return <div className="text-red-500 text-center p-6">
+      Failed to load orders: {error?.data?.message || error?.message || "Unknown error"}
+    </div>;
+  }
 
   return (
     <section className="space-y-6">
@@ -33,33 +38,31 @@ const Orders = () => {
                 <div>
                   <p className="text-lg font-bold">Order #{order._id.slice(-6).toUpperCase()}</p>
                   <p className="text-sm text-gray-600">
-                    <strong>Customer:</strong> {order.user?.name || 'N/A'} ({order.user?.email || 'N/A'})
+                    <strong>Customer:</strong> {order.name || 'N/A'} ({order.email || 'N/A'})
                   </p>
-                  <p className="text-sm"><strong>Address:</strong> {order.shippingAddress}</p>
-                  <p className="text-sm"><strong>Payment:</strong> {order.paymentMethod}</p>
+                  <p className="text-sm">
+                    <strong>Address:</strong> {order.address?.city}, {order.address?.country}
+                  </p>
+                  <p className="text-sm"><strong>Phone:</strong> {order.phone}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-green-600">${order.totalAmount?.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600">${order.totalPrice || order.totalAmount || 0}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(order.createdAt).toLocaleString()}
                   </p>
-                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${
-                    order.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {order.status || 'Pending'}
+                  <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium mt-2">
+                    Pending
                   </span>
                 </div>
               </div>
 
               <div className="border-t pt-4">
-                <p className="font-medium mb-2">Items:</p>
+                <p className="font-medium mb-2">Items (Product IDs):</p>
                 <div className="space-y-1">
-                  {order.books?.map((book, i) => (
+                  {(order.productIds || []).map((id, i) => (
                     <div key={i} className="flex justify-between text-sm">
-                      <span>{book.title || 'Unknown Book'} × {book.quantity}</span>
-                      <span>${(book.price * book.quantity).toFixed(2)}</span>
+                      <span>Product ID: {id}</span>
+                      <span>-</span>
                     </div>
                   ))}
                 </div>

@@ -5,15 +5,15 @@ import getBaseUrl from "../../../utils/baseURL";
 const ordersApi = createApi({
   reducerPath: 'ordersApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: getBaseUrl(), // ← SỬA: DỪNG /api/orders → ĐỂ TRONG ENDPOINT
+    baseUrl: getBaseUrl(),
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('token');
-      if (token) {
+        const token = localStorage.getItem('token');
+        if (token) {
         headers.set('Authorization', `Bearer ${token}`);
-      }
-      return headers;
+        }
+        return headers;
     },
-  }),
+    }),
   tagTypes: ['Orders'],
   endpoints: (builder) => ({
     // 1. Tạo đơn hàng
