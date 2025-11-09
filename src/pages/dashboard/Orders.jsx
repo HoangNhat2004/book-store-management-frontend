@@ -8,10 +8,14 @@ const Orders = () => {
 
   if (isLoading) return <Loading />;
   if (error) {
-    console.error("API Error:", error); // ← XEM LỖI CHI TIẾT TRONG CONSOLE
-    return <div className="text-red-500 text-center p-6">
-      Failed to load orders: {error?.data?.message || error?.message || "Unknown error"}
-    </div>;
+    return (
+      <div className="text-red-500 text-center p-6 bg-red-50 rounded-lg">
+        <p>Failed to load orders: {error?.data?.message || "Unknown error"}</p>
+        <button onClick={refetch} className="mt-2 px-4 py-2 bg-blue-600 text-white rounded">
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -38,7 +42,7 @@ const Orders = () => {
                 <div>
                   <p className="text-lg font-bold">Order #{order._id.slice(-6).toUpperCase()}</p>
                   <p className="text-sm text-gray-600">
-                    <strong>Customer:</strong> {order.name || 'N/A'} ({order.email || 'N/A'})
+                    <strong>Customer:</strong> {order.name} ({order.email})
                   </p>
                   <p className="text-sm">
                     <strong>Address:</strong> {order.address?.city}, {order.address?.country}
@@ -46,7 +50,7 @@ const Orders = () => {
                   <p className="text-sm"><strong>Phone:</strong> {order.phone}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-green-600">${order.totalPrice || order.totalAmount || 0}</p>
+                  <p className="text-2xl font-bold text-green-600">${order.totalPrice}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(order.createdAt).toLocaleString()}
                   </p>
@@ -59,7 +63,7 @@ const Orders = () => {
               <div className="border-t pt-4">
                 <p className="font-medium mb-2">Items (Product IDs):</p>
                 <div className="space-y-1">
-                  {(order.productIds || []).map((id, i) => (
+                  {order.productIds?.map((id, i) => (
                     <div key={i} className="flex justify-between text-sm">
                       <span>Product ID: {id}</span>
                       <span>-</span>
