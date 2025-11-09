@@ -21,7 +21,7 @@ const AdminLogin = () => {
                 const response = await axios.post(
                     `${getBaseUrl()}/api/auth/login`,  // ĐÚNG: /login
                     {
-                        identifier: data.username,  // Gửi dưới dạng identifier
+                        identifier: data.username,  // Gửi email/username như identifier
                         password: data.password
                     },
                     {
@@ -31,27 +31,25 @@ const AdminLogin = () => {
 
                 const auth = response.data;
 
-                if (auth.token && auth.user.role === "admin") {
+                if (auth.token && auth.user.role === 'admin') {
                     localStorage.setItem('token', auth.token);
                     localStorage.setItem('adminUser', JSON.stringify(auth.user));
 
-                    // Token hết hạn sau 1 giờ
                     setTimeout(() => {
                         localStorage.removeItem('token');
                         localStorage.removeItem('adminUser');
-                        alert('Token đã hết hạn! Vui lòng đăng nhập lại.');
-                        navigate("/");
+                        alert('Token expired! Login again.');
+                        navigate('/');
                     }, 3600 * 1000);
 
                     alert("Admin Login successful!");
-                    navigate("/dashboard");
+                    navigate('/dashboard');
                 } else {
-                    setMessage("Bạn không có quyền admin!");
+                    setMessage('You do not have admin rights!');
                 }
-
             } catch (error) {
                 console.error(error);
-                setMessage("Sai tên đăng nhập hoặc mật khẩu");
+                setMessage(error.response?.data?.message || 'Invalid username/password');
             }
         };
   return (
