@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useGetOrderByEmailQuery } from '../../../redux/features/orders/ordersApi';
-import getImgUrl from '../../../utils/getImgUrl';
+import getImgUrl from '../../../../utils/getImgUrl';
 
 const UserDashboard = () => {
   const { currentUser } = useAuth();
