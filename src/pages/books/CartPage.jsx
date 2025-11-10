@@ -2,13 +2,13 @@ import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router-dom'
 import { getImgUrl } from '../../utils/getImgUrl';
-import { clearCart, removeFromCart } from '../../redux/features/cart/cartSlice';
+import { clearCart, removeFromCart, updateQuantity } from '../../redux/features/cart/cartSlice';
 
 const CartPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
     const dispatch =  useDispatch()
 
-    const totalPrice =  cartItems.reduce((acc, item) => acc + item.newPrice, 0).toFixed(2);
+    const totalPrice =  cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0).toFixed(2);
 
     const handleRemoveFromCart = (product) => {
         dispatch(removeFromCart(product))
@@ -17,6 +17,25 @@ const CartPage = () => {
     const handleClearCart  = () => {
         dispatch(clearCart())
     }
+
+    const handleIncreaseQuantity = (product) => {
+        // Lấy số lượng hiện tại (hoặc 1 nếu chưa có) và cộng thêm 1
+        const newQuantity = (product.quantity || 1) + 1;
+        // Dispatch action updateQuantity đã import
+        dispatch(updateQuantity({ _id: product._id, quantity: newQuantity }));
+    };
+
+    const handleDecreaseQuantity = (product) => {
+        // Lấy số lượng hiện tại (hoặc 1) và trừ đi 1
+        const newQuantity = (product.quantity || 1) - 1;
+        if (newQuantity > 0) {
+            // Nếu vẫn còn, chỉ cập nhật
+            dispatch(updateQuantity({ _id: product._id, quantity: newQuantity }));
+        } else {
+            // Nếu về 0, xóa sản phẩm khỏi giỏ hàng
+            dispatch(removeFromCart(product));
+        }
+    };
     return (
         <>
             <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-xl">
@@ -62,7 +81,25 @@ const CartPage = () => {
                                                             <p className="mt-1 text-sm text-gray-500 capitalize"><strong>Category: </strong>{product?.category}</p>
                                                         </div>
                                                         <div className="flex flex-1 flex-wrap items-end justify-between space-y-2 text-sm">
-                                                            <p className="text-gray-500"><strong>Qty:</strong> 1</p>
+                                                            <div className="flex items-center border border-gray-200 rounded">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDecreaseQuantity(product)}
+                                                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="w-10 text-center font-medium text-gray-700">
+                                                                    {product.quantity || 1}
+                                                                </span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleIncreaseQuantity(product)}
+                                                                    className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-100"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
 
                                                             <div className="flex">
                                                                 <button
