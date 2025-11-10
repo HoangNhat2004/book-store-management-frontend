@@ -2,6 +2,7 @@
 import React from 'react';
 import { useGetOrderByEmailQuery } from '../../redux/features/orders/ordersApi';
 import { useAuth } from '../../context/AuthContext';
+import getImgUrl from '../../../utils/getImgUrl';
 
 const OrderPage = () => {
   const { currentUser } = useAuth();
@@ -67,9 +68,13 @@ const OrderPage = () => {
                       <div className="flex items-center gap-4">
                         {product.coverImage ? (
                           <img 
-                            src={product.coverImage} 
+                            src={getImgUrl(product.coverImage)} 
                             alt={product.title} 
                             className="w-16 h-20 object-cover rounded-md shadow-sm"
+                            onError={(e) => {
+                                e.target.src = '/placeholder-book.jpg';
+                                e.target.onerror = null;
+                            }}
                           />
                         ) : (
                           <div className="w-16 h-20 bg-gray-200 rounded-md flex items-center justify-center">

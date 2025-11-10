@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
 import { useGetOrderByEmailQuery } from '../../../redux/features/orders/ordersApi';
+import getImgUrl from '../../../utils/getImgUrl';
 
 const UserDashboard = () => {
   const { currentUser } = useAuth();
@@ -61,10 +62,10 @@ const UserDashboard = () => {
                         <div key={product._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
                           {product.coverImage ? (
                             <img
-                              src={product.coverImage}
+                              src={getImgUrl(product.coverImage)}
                               alt={product.title}
                               className="w-14 h-20 object-cover rounded-md shadow-sm"
-                              onError={(e) => { e.target.src = '/placeholder-book.jpg'; }}
+                              onError={(e) => { e.target.src = '/placeholder-book.jpg'; e.target.onerror = null;}}
                             />
                           ) : (
                             <div className="w-14 h-20 bg-gray-200 rounded-md flex items-center justify-center">
