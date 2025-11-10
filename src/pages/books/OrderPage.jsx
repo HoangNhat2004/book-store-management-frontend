@@ -2,7 +2,7 @@
 import React from 'react';
 import { useGetOrderByEmailQuery } from '../../redux/features/orders/ordersApi';
 import { useAuth } from '../../context/AuthContext';
-import getImgUrl from '../../../utils/getImgUrl';
+import getImgUrl from '../../utils/getImgUrl';
 
 const OrderPage = () => {
   const { currentUser } = useAuth();
