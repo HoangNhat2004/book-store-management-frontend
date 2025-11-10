@@ -1,15 +1,25 @@
-import React, { useState } from 'react' // 1. Import useState
+import React, { useState, useEffect } from 'react' // 1. Import useState
 import { useDeleteBookMutation, useFetchAllBooksQuery } from '../../../redux/features/books/booksApi';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
+
+function useQuery() {
+    return new URLSearchParams(useLocation().search);
+}
 
 const ManageBooks = () => {
     const navigate = useNavigate();
     const { data: books, refetch } = useFetchAllBooksQuery()
     const [deleteBook] = useDeleteBookMutation()
-    
+    const query = useQuery();
+    const urlSearchQuery = query.get('q');
     // 2. Thêm state để lưu trữ nội dung tìm kiếm
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState(urlSearchQuery || "");
+    useEffect(() => {
+        if (urlSearchQuery) {
+            setSearchQuery(urlSearchQuery);
+        }
+    }, [urlSearchQuery]);
 
     const handleDeleteBook = async (id, title) => {
         Swal.fire({

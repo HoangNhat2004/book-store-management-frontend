@@ -9,6 +9,16 @@ import { MdOutlineManageHistory } from "react-icons/md";
 const DashboardLayout = () => {
   
   const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // Điều hướng đến trang manage-books với query
+      navigate(`/dashboard/manage-books?q=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery(""); // Xóa nội dung sau khi tìm
+    }
+  };
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate("/")
@@ -71,12 +81,21 @@ const DashboardLayout = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7" />
           </svg>
         </button>
-        <div className="relative w-full max-w-md sm:-ml-2">
-          <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor" className="absolute h-6 w-6 mt-2.5 ml-2 text-gray-400">
-            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-          </svg>
-          <input type="text" role="search" placeholder="Search..." className="py-2 pl-10 pr-4 w-full border-4 border-transparent placeholder-gray-400 focus:bg-gray-50 rounded-lg" />
-        </div>
+        <form onSubmit={handleSearch} className="relative w-full max-w-md sm:-ml-2">
+          <button type="submit" className="absolute h-6 w-6 mt-2.5 ml-2 text-gray-400 focus:outline-none">
+            <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
+          </button>
+          <input 
+            type="text" 
+            role="search" 
+            placeholder="Search books..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="py-2 pl-10 pr-4 w-full border-4 border-transparent placeholder-gray-400 focus:bg-gray-50 rounded-lg" 
+          />
+        </form>
         <div className="flex flex-shrink-0 items-center ml-auto">
           <button className="inline-flex items-center p-2 hover:bg-gray-100 focus:bg-gray-100 rounded-lg">
             <span className="sr-only">User Menu</span>
