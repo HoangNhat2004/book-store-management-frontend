@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { HiMiniBars3CenterLeft, HiOutlineHeart, HiOutlineShoppingCart } from "react-icons/hi2";
 import { IoSearchOutline } from "react-icons/io5";
 import { HiOutlineUser } from "react-icons/hi";
@@ -16,14 +16,22 @@ const navigation = [
 ]
 
 const Navbar = () => {
-
-    const  [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
     const cartItems = useSelector(state => state.cart.cartItems);
-   
     const {currentUser, logout} = useAuth()
+    const navigate = useNavigate()
     
     const handleLogOut = () => {
         logout()
+    }
+
+    const handleSearch = (e) => {
+        e.preventDefault()
+        if (searchQuery.trim()) {
+            navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+            setSearchQuery("")
+        }
     }
 
     const token = localStorage.getItem('token');
@@ -39,17 +47,22 @@ const Navbar = () => {
 
                     {/* search input */}
                     <div className="relative sm:w-72 w-40 space-x-2">
-
-                        <IoSearchOutline className="absolute inline-block left-3 inset-y-2" />
-
-                        <input type="text" placeholder="Search here"
-                            className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline-none"
-                        />
+                        <form onSubmit={handleSearch}>
+                            <IoSearchOutline className="absolute inline-block left-3 inset-y-2 cursor-pointer" 
+                                onClick={handleSearch}
+                            />
+                            <input 
+                                type="text" 
+                                placeholder="Search books..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="bg-[#EAEAEA] w-full py-1 md:px-8 px-6 rounded-md focus:outline-none"
+                            />
+                        </form>
                     </div>
                 </div>
 
-
-                {/* rigth side */}
+                {/* right side */}
                 <div className="relative flex items-center md:space-x-3 space-x-2">
                     <div >
                         {
@@ -95,8 +108,6 @@ const Navbar = () => {
                         {
                             cartItems.length > 0 ?  <span className="text-sm font-semibold sm:ml-1">{cartItems.length}</span> :  <span className="text-sm font-semibold sm:ml-1">0</span>
                         }
-                        
-                       
                     </Link>
                 </div>
             </nav>

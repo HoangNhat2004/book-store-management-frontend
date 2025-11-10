@@ -1,10 +1,71 @@
-// src/pages/dashboard/Orders.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useGetOrdersQuery } from '../../redux/features/orders/ordersApi';
 import Loading from '../../components/Loading';
+import axios from 'axios';
+import getBaseUrl from '../../utils/baseURL';
+import Swal from 'sweetalert2';
 
 const Orders = () => {
   const { data: orders = [], error, isLoading, refetch } = useGetOrdersQuery();
+  const [updatingOrderId, setUpdatingOrderId] = useState(null);
+
+  const handleUpdateStatus = async (orderId, currentStatus) => {
+    const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
+    
+    const { value: newStatus } = await Swal.fire({
+      title: 'Update Order Status',
+      input: 'select',
+      inputOptions: {
+        'Pending': 'Pending',
+        'Processing': 'Processing',
+        'Shipped': 'Shipped',
+        'Delivered': 'Delivered',
+        'Cancelled': 'Cancelled'
+      },
+      inputValue: currentStatus,
+      showCancelButton: true,
+      inputValidator: (value) => {
+        if (!value) {
+          return 'Please select a status!'
+        }
+      }
+    });
+
+    if (newStatus && newStatus !== currentStatus) {
+      try {
+        setUpdatingOrderId(orderId);
+        await axios.put(
+          `${getBaseUrl()}/api/orders/${orderId}/status`,
+          { status: newStatus },
+          {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json',
+            }
+          }
+        );
+
+        Swal.fire({
+          title: 'Updated!',
+          text: `Order status updated to ${newStatus}`,
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        });
+
+        refetch();
+      } catch (error) {
+        console.error('Error updating status:', error);
+        Swal.fire({
+          title: 'Error!',
+          text: 'Failed to update order status',
+          icon: 'error'
+        });
+      } finally {
+        setUpdatingOrderId(null);
+      }
+    }
+  };
 
   if (isLoading) return <Loading />;
   if (error) {
@@ -21,6 +82,17 @@ const Orders = () => {
       </div>
     );
   }
+
+  const getStatusColor = (status) => {
+    const colors = {
+      'Pending': 'bg-yellow-100 text-yellow-800',
+      'Processing': 'bg-blue-100 text-blue-800',
+      'Shipped': 'bg-purple-100 text-purple-800',
+      'Delivered': 'bg-green-100 text-green-800',
+      'Cancelled': 'bg-red-100 text-red-800'
+    };
+    return colors[status] || 'bg-gray-100 text-gray-800';
+  };
 
   return (
     <section className="space-y-6">
@@ -58,9 +130,13 @@ const Orders = () => {
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(order.createdAt).toLocaleString()}
                   </p>
-                  <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium mt-2">
-                    Pending
-                  </span>
+                  <button
+                    onClick={() => handleUpdateStatus(order._id, order.status || 'Pending')}
+                    disabled={updatingOrderId === order._id}
+                    className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 cursor-pointer hover:opacity-80 transition-opacity ${getStatusColor(order.status || 'Pending')}`}
+                  >
+                    {updatingOrderId === order._id ? 'Updating...' : (order.status || 'Pending')}
+                  </button>
                 </div>
               </div>
 
@@ -72,7 +148,7 @@ const Orders = () => {
                       <span>
                         <strong>{product.title}</strong> × {order.quantities?.[i] || 1}
                       </span>
-                      <span className="font-medium">${product.newPrice}</span>
+                      <span className="font-medium">${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
