@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react' // 1. Import useState
 import { useDeleteBookMutation, useFetchAllBooksQuery } from '../../../redux/features/books/booksApi';
 import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -7,6 +7,9 @@ const ManageBooks = () => {
     const navigate = useNavigate();
     const { data: books, refetch } = useFetchAllBooksQuery()
     const [deleteBook] = useDeleteBookMutation()
+    
+    // 2. Thêm state để lưu trữ nội dung tìm kiếm
+    const [searchQuery, setSearchQuery] = useState("");
 
     const handleDeleteBook = async (id, title) => {
         Swal.fire({
@@ -46,6 +49,14 @@ const ManageBooks = () => {
         navigate(`dashboard/edit-book/${id}`);
     };
 
+    // 3. Lọc danh sách sách dựa trên searchQuery
+    const filteredBooks = books
+        ? books.filter(book =>
+            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            book.category.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        : [];
+
     return (
         <section className="py-1 bg-blueGray-50">
             <div className="w-full xl:w-8/12 mb-12 xl:mb-0 px-4 mx-auto mt-24">
@@ -55,8 +66,15 @@ const ManageBooks = () => {
                             <div className="relative w-full px-4 max-w-full flex-grow flex-1">
                                 <h3 className="font-semibold text-base text-blueGray-700">All Books</h3>
                             </div>
+                            {/* 4. Thêm ô input tìm kiếm */}
                             <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                                <button className="bg-indigo-500 text-white active:bg-indigo-600 text-xs font-bold uppercase px-3 py-1 rounded outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">See all</button>
+                                <input
+                                    type="text"
+                                    placeholder="Search by title or category..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
                             </div>
                         </div>
                     </div>
@@ -85,7 +103,8 @@ const ManageBooks = () => {
 
                             <tbody>
                                 {
-                                    books && books.map((book, index) => (
+                                    // 5. Sử dụng 'filteredBooks' thay vì 'books' để render
+                                    filteredBooks && filteredBooks.map((book, index) => (
                                         <tr key={index}>
                                             <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-blueGray-700 ">
                                                 {index + 1}
@@ -93,7 +112,7 @@ const ManageBooks = () => {
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 ">
                                                 {book.title}
                                             </td>
-                                            <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                            <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowBrap p-4">
                                                 {book.category}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
