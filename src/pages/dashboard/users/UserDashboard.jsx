@@ -58,15 +58,24 @@ const UserDashboard = () => {
                     <p className="font-medium text-gray-800 mb-3">Items:</p>
                     <div className="space-y-3">
                       {order.productIds?.map((product, i) => (
-                        <div key={product._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                            <p className="font-medium text-gray-900">{product.title}</p>
+                        product ? (
+                          <div key={product._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
+                              <p className="font-medium text-gray-900">{product.title}</p>
+                              <p className="text-sm text-gray-600">
+                                Quantity: <strong>{order.quantities?.[i] || 1}</strong>
+                              </p>
+                            <p className="font-semibold text-green-600">
+                              ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
+                            </p>
+                          </div>
+                        ) : (
+                          <div key={i} className="flex items-center gap-4 bg-red-50 p-3 rounded-lg">
+                            <p className="font-medium text-red-700 italic">[Sản phẩm đã bị xóa]</p>
                             <p className="text-sm text-gray-600">
                               Quantity: <strong>{order.quantities?.[i] || 1}</strong>
                             </p>
-                          <p className="font-semibold text-green-600">
-                            ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
-                          </p>
-                        </div>
+                          </div>
+                        )
                       ))}
                     </div>
                   </div>

@@ -59,15 +59,25 @@ const OrderPage = () => {
                 <h3 className="font-semibold mb-2">Items Ordered:</h3>
                 <div className="space-y-2">
                   {order.productIds?.map((product, i) => (
-                    <div key={product._id} className="flex justify-between items-center bg-gray-50 p-3 rounded">
+                    product ? (
+                      <div key={product._id} className="flex justify-between items-center bg-gray-50 p-3 rounded">
+                          <div>
+                            <p className="font-medium">{product.title}</p>
+                            <p className="text-xs text-gray-600">Quantity: {order.quantities?.[i] || 1}</p>
+                          </div>
+                        <p className="font-medium text-green-600">
+                          ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
+                        </p>
+                      </div>
+                    ) : (
+                      // Hiển thị nếu sản phẩm đã bị xóa
+                      <div key={i} className="flex justify-between items-center bg-red-50 p-3 rounded">
                         <div>
-                          <p className="font-medium">{product.title}</p>
+                          <p className="font-medium text-red-700 italic">[Sản phẩm đã bị xóa]</p>
                           <p className="text-xs text-gray-600">Quantity: {order.quantities?.[i] || 1}</p>
                         </div>
-                      <p className="font-medium text-green-600">
-                        ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
-                      </p>
-                    </div>
+                      </div>
+                    )
                   ))}
                 </div>
               </div>
