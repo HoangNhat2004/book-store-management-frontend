@@ -65,12 +65,14 @@ const Orders = () => {
               </div>
 
               <div className="border-t pt-4">
-                <p className="font-medium mb-2">Items (Product IDs):</p>
-                <div className="space-y-1">
-                  {order.productIds?.map((id, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span>Product ID: {id}</span>
-                      <span>-</span>
+                <p className="font-medium mb-2">Items:</p>
+                <div className="space-y-2">
+                  {order.productIds?.map((product, i) => (
+                    <div key={product._id} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                      <span>
+                        <strong>{product.title}</strong> × {order.quantities?.[i] || 1}
+                      </span>
+                      <span className="font-medium">${product.newPrice}</span>
                     </div>
                   ))}
                 </div>
