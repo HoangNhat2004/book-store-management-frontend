@@ -143,21 +143,13 @@ const Orders = () => {
               <div className="border-t pt-4">
                 <p className="font-medium mb-2">Items:</p>
                 <div className="space-y-2">
-                  {order.productIds?.map((product, i) => (
-                    product ? (
-                      <div key={product._id} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
-                        <span>
-                          <strong>{product.title}</strong> × {order.quantities?.[i] || 1}
-                        </span>
-                        <span className="font-medium">${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}</span>
-                      </div>
-                    ) : (
-                      <div key={i} className="flex justify-between text-sm bg-red-50 p-2 rounded">
-                        <span>
-                          <strong className="text-red-700 italic">[Sản phẩm đã bị xóa]</strong> × {order.quantities?.[i] || 1}
-                        </span>
-                      </div>
-                    )
+                  {order.items?.map((item, i) => (
+                    <div key={item.productId || i} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
+                      <span>
+                        <strong>{item.title}</strong> × {item.quantity}
+                      </span>
+                      <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                    </div>
                   ))}
                 </div>
               </div>

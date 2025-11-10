@@ -57,25 +57,16 @@ const UserDashboard = () => {
                   <div className="border-t pt-4">
                     <p className="font-medium text-gray-800 mb-3">Items:</p>
                     <div className="space-y-3">
-                      {order.productIds?.map((product, i) => (
-                        product ? (
-                          <div key={product._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                              <p className="font-medium text-gray-900">{product.title}</p>
-                              <p className="text-sm text-gray-600">
-                                Quantity: <strong>{order.quantities?.[i] || 1}</strong>
-                              </p>
-                            <p className="font-semibold text-green-600">
-                              ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
-                            </p>
-                          </div>
-                        ) : (
-                          <div key={i} className="flex items-center gap-4 bg-red-50 p-3 rounded-lg">
-                            <p className="font-medium text-red-700 italic">[Sản phẩm đã bị xóa]</p>
+                      {order.items?.map((item, i) => (
+                        <div key={item.productId || i} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
+                            <p className="font-medium text-gray-900">{item.title}</p>
                             <p className="text-sm text-gray-600">
-                              Quantity: <strong>{order.quantities?.[i] || 1}</strong>
+                              Quantity: <strong>{item.quantity}</strong>
                             </p>
-                          </div>
-                        )
+                          <p className="font-semibold text-green-600">
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </p>
+                        </div>
                       ))}
                     </div>
                   </div>
