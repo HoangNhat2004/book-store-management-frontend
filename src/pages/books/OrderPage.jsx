@@ -60,15 +60,10 @@ const OrderPage = () => {
                 <div className="space-y-2">
                   {order.productIds?.map((product, i) => (
                     <div key={product._id} className="flex justify-between items-center bg-gray-50 p-3 rounded">
-                      <div className="flex items-center gap-3">
-                        {product.coverImage && (
-                          <img src={product.coverImage} alt={product.title} className="w-12 h-16 object-cover rounded" />
-                        )}
                         <div>
                           <p className="font-medium">{product.title}</p>
                           <p className="text-xs text-gray-600">Quantity: {order.quantities?.[i] || 1}</p>
                         </div>
-                      </div>
                       <p className="font-medium text-green-600">
                         ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
                       </p>

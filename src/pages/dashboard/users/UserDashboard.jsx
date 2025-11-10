@@ -59,24 +59,10 @@ const UserDashboard = () => {
                     <div className="space-y-3">
                       {order.productIds?.map((product, i) => (
                         <div key={product._id} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                          {product.coverImage ? (
-                            <img
-                              src={product.coverImage}
-                              alt={product.title}
-                              className="w-14 h-20 object-cover rounded-md shadow-sm"
-                              onError={(e) => { e.target.src = '/placeholder-book.jpg'; }}
-                            />
-                          ) : (
-                            <div className="w-14 h-20 bg-gray-200 rounded-md flex items-center justify-center">
-                              <span className="text-xs text-gray-500">No img</span>
-                            </div>
-                          )}
-                          <div className="flex-1">
                             <p className="font-medium text-gray-900">{product.title}</p>
                             <p className="text-sm text-gray-600">
                               Quantity: <strong>{order.quantities?.[i] || 1}</strong>
                             </p>
-                          </div>
                           <p className="font-semibold text-green-600">
                             ${(product.newPrice * (order.quantities?.[i] || 1)).toFixed(2)}
                           </p>
