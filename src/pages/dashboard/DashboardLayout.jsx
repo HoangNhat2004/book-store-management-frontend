@@ -28,15 +28,14 @@ const DashboardLayout = () => {
 
   return (
     <section className="flex md:bg-gray-100 min-h-screen overflow-hidden">
+    
+    {/* --- SIDEBAR (Giữ nguyên) --- */}
     <aside className="hidden sm:flex sm:flex-col">
       <a href="/" className="inline-flex items-center justify-center h-20 w-20 bg-purple-600 hover:bg-purple-500 focus:bg-purple-500">
         <img src="/fav-icon.png" alt="" />
       </a>
       <div className="flex-grow flex flex-col justify-between text-gray-500 bg-gray-800">
         <nav className="flex flex-col mx-4 my-6 space-y-4">
-          
-          {/* === Icon Folder (Thư mục) ĐÃ XÓA === */}
-          
           <Link to="/dashboard" className="inline-flex items-center justify-center py-3 text-purple-600 bg-white rounded-lg">
             <span className="sr-only">Dashboard</span>
             <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
@@ -61,14 +60,12 @@ const DashboardLayout = () => {
             </svg>
           </Link>
         </nav>
-        
-        {/* === Icon Settings (Cài đặt) ĐÃ XÓA === */}
-        
       </div>
     </aside>
+
     <div className="flex-grow text-gray-800">
+      {/* --- HEADER (Giữ nguyên) --- */}
       <header className="flex items-center h-20 px-6 sm:px-10 bg-white">
-        {/* ... (Thanh tìm kiếm giữ nguyên) ... */}
         <form onSubmit={handleSearch} className="relative w-full max-w-md sm:-ml-2">
           <button type="submit" className="absolute h-6 w-6 mt-2.5 ml-2 text-gray-400 focus:outline-none">
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
@@ -84,10 +81,7 @@ const DashboardLayout = () => {
             className="py-2 pl-10 pr-4 w-full border-4 border-transparent placeholder-gray-400 focus:bg-gray-50 rounded-lg" 
           />
         </form>
-
         <div className="flex flex-shrink-0 items-center ml-auto">
-          
-          {/* --- THÊM AVATAR ADMIN --- */}
           <div className="h-10 w-10 bg-gray-100 rounded-full overflow-hidden">
             <img
               src="/fav-icon.png"
@@ -95,23 +89,45 @@ const DashboardLayout = () => {
               className="h-full w-full object-cover p-2" 
             />
           </div>
-          {/* --- KẾT THÚC AVATAR --- */}
-
           <div className="border-l pl-3 ml-3 space-x-1">
-            
-            {/* Nút Logout */}
             <button
             onClick={handleLogout}
             className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
               <span className="sr-only">Log out</span>
               <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-  </svg>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
             </button>
           </div>
         </div>
       </header>
+      
+      {/* --- MAIN (Thêm lại các nút) --- */}
       <main className="p-6 sm:p-10 space-y-6 ">
+        
+        {/* === THÊM LẠI KHỐI NÀY === */}
+        <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row justify-between">
+          <div className="mr-6">
+            <h1 className="text-4xl font-semibold mb-2">Dashboard</h1>
+            <h2 className="text-gray-600 ml-0.5">Book Store Inventory</h2>
+          </div>
+          <div className="flex flex-col md:flex-row items-start justify-end -mb-3">
+            <Link to="/dashboard/manage-books" className="inline-flex px-5 py-3 text-purple-600 hover:text-purple-700 focus:text-purple-700 hover:bg-purple-100 focus:bg-purple-100 border border-purple-600 rounded-md mb-3">
+              <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="flex-shrink-0 h-5 w-5 -ml-1 mt-0.5 mr-2">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Manage Books
+            </Link>
+            <Link to="/dashboard/add-new-book" className="inline-flex px-5 py-3 text-white bg-purple-600 hover:bg-purple-700 focus:bg-purple-700 rounded-md ml-6 mb-3">
+              <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="flex-shrink-0 h-6 w-6 text-white -ml-1 mr-2">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add New Book
+            </Link>
+          </div>
+        </div>
+        {/* === KẾT THÚC KHỐI THÊM LẠI === */}
+
        <Outlet/>
       </main>
     </div>
