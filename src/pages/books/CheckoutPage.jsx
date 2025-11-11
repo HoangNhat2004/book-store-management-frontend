@@ -8,6 +8,7 @@ import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
 import { clearCart } from '../../redux/features/cart/cartSlice';
 import axios from 'axios'; // <-- THÊM
 import getBaseUrl from '../../utils/baseURL'; // <-- THÊM
+import Loading from '../../components/Loading';
 
 // Giả định 1 USD = 25,000 VND.
 // TRONG THỰC TẾ, bạn nên gọi API tỷ giá hoặc đặt tỷ giá này ở một nơi an toàn.
@@ -59,9 +60,9 @@ const CheckoutPage = () => {
                 zipcode: data.zipcode
             },
             phone: data.phone,
-            items: items, // <-- Gửi mảng items đã sao chép
-            totalPrice: totalOrderPriceUSD, // <-- Lưu tổng tiền USD
-            status: 'Pending' // Luôn là Pending khi mới tạo
+            items: items, // <-- Chỉ gửi 'items'
+            totalPrice: totalOrderPriceUSD, 
+            status: 'Pending'
         }
 
         try {
