@@ -38,6 +38,7 @@ const Dashboard = () => {
   return (
     <>
      <section className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {/* Box 1: Products */}
               <div className="flex items-center p-8 bg-white shadow rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-purple-600 bg-purple-100 rounded-full mr-6">
                 <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
@@ -49,6 +50,7 @@ const Dashboard = () => {
                   <span className="block text-gray-500">Products</span>
                 </div>
               </div>
+              {/* Box 2: Total Sales */}
               <div className="flex items-center p-8 bg-white shadow rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-green-600 bg-green-100 rounded-full mr-6">
                   <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
@@ -60,6 +62,7 @@ const Dashboard = () => {
                   <span className="block text-gray-500">Total Sales</span>
                 </div>
               </div>
+              {/* Box 3: Trending Books */}
               <div className="flex items-center p-8 bg-white shadow rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-red-600 bg-red-100 rounded-full mr-6">
                   <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
@@ -68,9 +71,10 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <span className="inline-block text-2xl font-bold">{data?.trendingBooks}</span>
-                  <span className="block text-gray-500">Trending Books in This Month</span>
+                  <span className="block text-gray-500">Trending Books</span>
                 </div>
               </div>
+              {/* Box 4: Total Orders */}
               <div className="flex items-center p-8 bg-white shadow rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-blue-600 bg-blue-100 rounded-full mr-6">
                 <MdIncompleteCircle className='size-6'/>
@@ -81,13 +85,13 @@ const Dashboard = () => {
                 </div>
               </div>
             </section>
+            
             <section className="grid md:grid-cols-2 gap-6 mt-6">
               
               {/* CỘT 1: BIỂU ĐỒ DOANH THU */}
               <div className="flex flex-col bg-white shadow rounded-lg">
                 <div className="px-6 py-5 font-semibold border-b border-gray-100">The number of orders per month</div>
                 <div className="p-4 flex-grow">
-                  {/* (RevenueChart đã tự lấy data) */}
                   <RevenueChart />
                 </div>
               </div>
@@ -105,7 +109,6 @@ const Dashboard = () => {
                 </div>
                 <div className="overflow-y-auto" style={{maxHeight: '24rem'}}>
                   <ul className="p-6 space-y-6">
-                    {/* --- BẮT ĐẦU VÒNG LẶP DỮ LIỆU THẬT --- */}
                     {
                        data.topUsers && data.topUsers.length > 0 ? (
                          data.topUsers.map((user, index) => (
@@ -114,10 +117,10 @@ const Dashboard = () => {
                                <img 
                                 src={user.photoURL || `https://randomuser.me/api/portraits/lego/${index % 9}.jpg`} 
                                 alt={`${user.name} profile`}
-                                className="h-full w-full object-cover" // Thêm class để đảm bảo ảnh vừa khít
+                                className="h-full w-full object-cover"
                                />
                              </div>
-                             <span className="text-gray-600">{user.name}</span>
+                             <span className="text-gray-600">{user.name || user._id}</span>
                              <span className="ml-auto font-semibold">${user.averageOrderValue.toFixed(2)}</span>
                            </li>
                          ))
@@ -125,16 +128,16 @@ const Dashboard = () => {
                          <li className="text-gray-500 text-center">No user data available.</li>
                        )
                      }
-                     {/* --- KẾT THÚC VÒNG LẶP --- */}
                   </ul>
                 </div>
               </div>
-
-              {/* CÁC KHỐI DỮ LIỆU GIẢ KHÁC (Orders left, Visits, Students) ĐÃ BỊ XÓA */}
             </section>
-            <section className="text-right font-semibold text-gray-500">
-              <a href="#" className="text-purple-600 hover:underline">Recreated on Codepen</a> with <a href="https://tailwindcss.com/" className="text-teal-400 hover:underline">Tailwind CSS</a> by Azri Kahar, <a href="https://dribbble.com/shots/10711741-Free-UI-Kit-for-Figma-Online-Courses-Dashboard" className="text-purple-600 hover:underline">original design</a> made by Chili Labs
+            
+            {/* --- BẮT ĐẦU THAY THẾ FOOTER --- */}
+            <section className="text-center mt-6 font-semibold text-gray-500">
+              <p>Book Store Management Project - Developed by Group SOA-132</p>
             </section>
+            {/* --- KẾT THÚC THAY THẾ --- */}
     </>
   )
 }
