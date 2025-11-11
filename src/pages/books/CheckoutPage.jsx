@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from "react-hook-form"
 import { Link, useNavigate } from 'react-router-dom';
@@ -6,10 +6,15 @@ import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
 import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
 import { clearCart } from '../../redux/features/cart/cartSlice';
+import axios from 'axios'; // <-- THÊM
+import getBaseUrl from '../../utils/baseURL'; // <-- THÊM
+
+// Giả định 1 USD = 25,000 VND.
+// TRONG THỰC TẾ, bạn nên gọi API tỷ giá hoặc đặt tỷ giá này ở một nơi an toàn.
+const EXCHANGE_RATE_USD_TO_VND = 25000;
 
 const CheckoutPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
-    const totalPrice = cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0).toFixed(2);
     const { currentUser } = useAuth()
     const {
         register,
@@ -18,14 +23,33 @@ const CheckoutPage = () => {
         formState: { errors },
     } = useForm()
 
-    const [createOrder, { isLoading, error }] = useCreateOrderMutation();
+    const [createOrder, { isLoading }] = useCreateOrderMutation();
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
     const [isChecked, setIsChecked] = useState(false)
     
+    // --- CẬP NHẬT STATE ---
+    const [shippingFee] = useState(0); // Tạm thời bỏ qua GHTK, phí ship = 0
+    const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' hoặc 'vnpay'
+    // -----------------------
+
+    // Tính toán lại tổng tiền (hiện tại đang là USD)
+    const subtotal = cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0);
+    const totalOrderPriceUSD = (Number(subtotal) + Number(shippingFee)); // Tổng tiền USD
+
+    
     const onSubmit = async (data) => {
-        const newOrder = {
+        // 1. Tạo mảng 'items' từ cartItems (theo schema mới)
+        const items = cartItems.map(item => ({
+            productId: item._id,
+            title: item.title,
+            price: item.newPrice, // Lưu giá gốc (USD)
+            quantity: item.quantity || 1
+        }));
+
+        // 2. Tạo đối tượng đơn hàng cơ bản
+        const orderPayload = {
             name: data.name,
             email: currentUser?.email,
             address: {
@@ -35,30 +59,55 @@ const CheckoutPage = () => {
                 zipcode: data.zipcode
             },
             phone: data.phone,
-            productIds: cartItems.map(item => item?._id),
-            quantities: cartItems.map(item => item.quantity || 1),
-            totalPrice: totalPrice,
+            items: items, // <-- Gửi mảng items đã sao chép
+            totalPrice: totalOrderPriceUSD, // <-- Lưu tổng tiền USD
+            status: 'Pending' // Luôn là Pending khi mới tạo
         }
 
         try {
-            await createOrder(newOrder).unwrap();
-            Swal.fire({
-                title: "Confirmed Order",
-                text: "Your order placed successfully!",
-                icon: "success",
-                showCancelButton: false,
-                confirmButtonColor: "#3085d6",
-                confirmButtonText: "OK"
-            });
-            dispatch(clearCart())
-            navigate("/orders")
+            // 3. Tạo đơn hàng trong CSDL trước (luôn ở trạng thái Pending)
+            const newOrder = await createOrder(orderPayload).unwrap();
+
+            // 4. Rẽ nhánh dựa trên phương thức thanh toán
+            if (paymentMethod === 'cod') {
+                // Nếu là COD, chỉ cần hiển thị thành công và điều hướng
+                Swal.fire({
+                    title: "Confirmed Order (COD)",
+                    text: "Your order placed successfully!",
+                    icon: "success",
+                    confirmButtonText: "OK"
+                });
+                dispatch(clearCart());
+                navigate("/orders");
+
+            } else if (paymentMethod === 'vnpay') {
+                // Nếu là VNPay, gọi backend để lấy URL thanh toán
+
+                // 5. Chuyển đổi tổng tiền sang VND
+                const totalAmountVND = Math.round(newOrder.totalPrice * EXCHANGE_RATE_USD_TO_VND);
+                
+                // 6. Gọi API backend để tạo URL
+                const paymentRes = await axios.post(`${getBaseUrl()}/api/payment/create-payment-url`, {
+                    orderId: newOrder._id, // Gửi ID đơn hàng vừa tạo
+                    amountInVND: totalAmountVND // Gửi số tiền đã quy đổi sang VND
+                });
+
+                // 7. Xóa giỏ hàng và chuyển hướng người dùng đến VNPay
+                dispatch(clearCart());
+                window.location.href = paymentRes.data.url;
+            }
+
         } catch (error) {
-            console.error("Error place an order", error);
-            alert("Failed to place an order")
+            console.error("Error placing order:", error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to place an order. Please try again.',
+                icon: 'error'
+            });
         }
     }
 
-    if (isLoading) return <div>Loading....</div>
+    if (isLoading) return <Loading />
     
     return (
         <section>
@@ -66,12 +115,45 @@ const CheckoutPage = () => {
                 <div className="container max-w-screen-lg mx-auto">
                     <div>
                         <div>
-                            <h2 className="font-semibold text-xl text-gray-600 mb-2">Cash On Delivery</h2>
-                            <p className="text-gray-500 mb-2">Total Price: ${totalPrice}</p>
-                            <p className="text-gray-500 mb-6">Items: {cartItems.length > 0 ? cartItems.length : 0}</p>
+                             {/* CẬP NHẬT HIỂN THỊ GIÁ */}
+                             <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
+                            <p className="text-gray-500 mb-1">Items: {cartItems.length > 0 ? cartItems.length : 0}</p>
+                            <p className="text-gray-500 mb-1">Subtotal: ${subtotal.toFixed(2)}</p>
+                            <p className="text-gray-500 mb-1">Shipping Fee: ${shippingFee.toFixed(2)}</p>
+                            <p className="font-semibold text-lg text-gray-600 mb-6">Total Price: ${totalOrderPriceUSD.toFixed(2)}</p>
                         </div>
 
                         <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
+                            {/* --- THÊM LỰA CHỌN THANH TOÁN --- */}
+                            <div className="mb-6">
+                                <p className="font-medium text-lg mb-3">Payment Method</p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <label className="flex items-center gap-2 p-3 border rounded-md cursor-pointer flex-1">
+                                        <input 
+                                            type="radio" 
+                                            name="paymentMethod" 
+                                            value="cod" 
+                                            checked={paymentMethod === 'cod'} 
+                                            onChange={() => setPaymentMethod('cod')} 
+                                            className="form-radio text-indigo-600"
+                                        />
+                                        Cash on Delivery (COD)
+                                    </label>
+                                    <label className="flex items-center gap-2 p-3 border rounded-md cursor-pointer flex-1">
+                                        <input 
+                                            type="radio" 
+                                            name="paymentMethod" 
+                                            value="vnpay" 
+                                            checked={paymentMethod === 'vnpay'} 
+                                            onChange={() => setPaymentMethod('vnpay')} 
+                                            className="form-radio text-indigo-600"
+                                        />
+                                        Pay with VNPay (VND)
+                                    </label>
+                                </div>
+                            </div>
+                            {/* --- KẾT THÚC LỰA CHỌN --- */}
+
                             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3 my-8">
                                 <div className="text-gray-600">
                                     <p className="font-medium text-lg">Personal Details</p>
@@ -80,6 +162,7 @@ const CheckoutPage = () => {
 
                                 <div className="lg:col-span-2">
                                     <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 md:grid-cols-5">
+                                        {/* ... (Giữ nguyên các InputField cho tên, email, địa chỉ...) ... */}
                                         <div className="md:col-span-5">
                                             <label htmlFor="full_name">Full Name</label>
                                             <input
@@ -141,6 +224,7 @@ const CheckoutPage = () => {
                                                 type="text" name="zipcode" id="zipcode" className="transition-all flex items-center h-10 border mt-1 rounded px-4 w-full bg-gray-50" placeholder="" />
                                         </div>
 
+
                                         <div className="md:col-span-5 mt-3">
                                             <div className="inline-flex items-center">
                                                 <input
@@ -153,9 +237,9 @@ const CheckoutPage = () => {
                                         <div className="md:col-span-5 text-right">
                                             <div className="inline-flex items-end">
                                                 <button
-                                                    disabled={!isChecked}
+                                                    disabled={!isChecked || isLoading}
                                                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
-                                                    Place an Order
+                                                    {isLoading ? 'Processing...' : 'Place an Order'}
                                                 </button>
                                             </div>
                                         </div>
