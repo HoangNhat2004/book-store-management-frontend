@@ -111,8 +111,11 @@ const Dashboard = () => {
                          data.topUsers.map((user, index) => (
                            <li key={user._id || index} className="flex items-center">
                              <div className="h-10 w-10 mr-3 bg-gray-100 rounded-full overflow-hidden">
-                               {/* Dùng ảnh avatar lego ngẫu nhiên */}
-                               <img src={`https://randomuser.me/api/portraits/lego/${index % 9}.jpg`} alt={`${user.name} profile`}/>
+                               <img 
+                                src={user.photoURL || `https://randomuser.me/api/portraits/lego/${index % 9}.jpg`} 
+                                alt={`${user.name} profile`}
+                                className="h-full w-full object-cover" // Thêm class để đảm bảo ảnh vừa khít
+                               />
                              </div>
                              <span className="text-gray-600">{user.name}</span>
                              <span className="ml-auto font-semibold">${user.averageOrderValue.toFixed(2)}</span>

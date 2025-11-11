@@ -1,6 +1,8 @@
 import {  createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
 import { createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from "firebase/auth";
+import axios from 'axios';
+import getBaseUrl from "../utils/baseURL";
 
 const AuthContext =  createContext();
 
@@ -45,11 +47,15 @@ export const AuthProvide = ({children}) => {
             setLoading(false);
 
             if(user) {
-               
-                const {email, displayName, photoURL} = user;
-                const userData = {
-                    email, username: displayName, photo: photoURL
-                } 
+              const {email, displayName, photoURL} = user;
+                axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
+                    email,
+                    username: displayName,
+                    photoURL
+                }).catch(err => {
+                    // Không cần làm người dùng lo lắng nếu thất bại
+                    console.error("Failed to sync user profile to backend:", err);
+                });
             }
         })
 
