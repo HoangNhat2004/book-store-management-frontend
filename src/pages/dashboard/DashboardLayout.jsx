@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react' // Bỏ useEffect vì không cần dropdown
+import React, { useState } from 'react' 
 
 import Loading from '../../components/Loading';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
@@ -22,7 +22,7 @@ const DashboardLayout = () => {
   
   const handleLogout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('adminUser'); // Xóa cả adminUser
+    localStorage.removeItem('adminUser'); 
     navigate("/admin") // Chuyển về trang login admin
   }
 
@@ -68,13 +68,7 @@ const DashboardLayout = () => {
     </aside>
     <div className="flex-grow text-gray-800">
       <header className="flex items-center h-20 px-6 sm:px-10 bg-white">
-        <button className="block sm:hidden relative flex-shrink-0 p-2 mr-2 text-gray-600 hover:bg-gray-100 hover:text-gray-800 focus:bg-gray-100 focus:text-gray-800 rounded-full">
-          <span className="sr-only">Menu</span>
-            <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="h-6 w-6">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7" />
-          </svg>
-        </button>
-        {/* Thanh tìm kiếm */}
+        {/* ... (Thanh tìm kiếm giữ nguyên) ... */}
         <form onSubmit={handleSearch} className="relative w-full max-w-md sm:-ml-2">
           <button type="submit" className="absolute h-6 w-6 mt-2.5 ml-2 text-gray-400 focus:outline-none">
             <svg aria-hidden="true" viewBox="0 0 20 20" fill="currentColor">
@@ -93,13 +87,19 @@ const DashboardLayout = () => {
 
         <div className="flex flex-shrink-0 items-center ml-auto">
           
-          {/* === Khối User (Grace Simmons) ĐÃ XÓA === */}
+          {/* --- THÊM AVATAR ADMIN --- */}
+          <div className="h-10 w-10 bg-gray-100 rounded-full overflow-hidden">
+            <img
+              src="/fav-icon.png"
+              alt="admin avatar"
+              className="h-full w-full object-cover p-2" 
+            />
+          </div>
+          {/* --- KẾT THÚC AVATAR --- */}
 
           <div className="border-l pl-3 ml-3 space-x-1">
             
-            {/* === Icon Chuông ĐÃ XÓA === */}
-            
-            {/* Giữ lại nút Logout theo yêu cầu */}
+            {/* Nút Logout */}
             <button
             onClick={handleLogout}
             className="relative p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 focus:bg-gray-100 focus:text-gray-600 rounded-full">
