@@ -7,6 +7,11 @@ const UserDashboard = () => {
   const { currentUser } = useAuth();
   const { data: orders = [], isLoading, isError } = useGetOrderByEmailQuery(currentUser?.email);
 
+  // --- THÊM DÒNG NÀY ---
+  // Lọc để chỉ lấy các đơn hàng hợp lệ (được tạo bằng model mới và có items)
+  const validOrders = orders.filter(order => order.items && order.items.length > 0);
+  // --- KẾT THÚC THÊM ---
+
   if (isLoading) return <div className="text-center py-20">Loading...</div>;
   if (isError) return <div className="text-center text-red-600 py-20">Error loading orders</div>;
 
@@ -21,14 +26,16 @@ const UserDashboard = () => {
         <div className="bg-gray-50 p-6 rounded-lg">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Your Recent Orders</h2>
 
-          {orders.length === 0 ? (
+          {/* THAY THẾ 'orders.length' BẰNG 'validOrders.length' */}
+          {validOrders.length === 0 ? (
             <div className="text-center py-12 bg-white rounded-lg border">
               <p className="text-lg text-gray-600">You haven't placed any orders yet.</p>
               <p className="text-sm text-gray-500 mt-2">Start shopping to see your orders here!</p>
             </div>
           ) : (
             <div className="space-y-6">
-              {orders.slice(0, 5).map((order) => (
+              {/* THAY THẾ 'orders.slice(0, 5).map' BẰNG 'validOrders.slice(0, 5).map' */}
+              {validOrders.slice(0, 5).map((order) => (
                 <div key={order._id} className="bg-white p-6 rounded-lg shadow border">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -48,7 +55,13 @@ const UserDashboard = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-2xl font-bold text-green-600">${order.totalPrice}</p>
-                      <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium mt-2">
+                      <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${
+                        order.status === 'Cancelled' ? 'bg-red-100 text-red-800' : 
+                        order.status === 'Delivered' ? 'bg-green-100 text-green-800' :
+                        order.status === 'Shipped' ? 'bg-purple-100 text-purple-800' :
+                        order.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
                         {order.status || 'Pending'}
                       </span>
                     </div>
@@ -57,6 +70,7 @@ const UserDashboard = () => {
                   <div className="border-t pt-4">
                     <p className="font-medium text-gray-800 mb-3">Items:</p>
                     <div className="space-y-3">
+                      {/* Đọc từ order.items (đã sửa ở bước trước) */}
                       {order.items?.map((item, i) => (
                         <div key={item.productId || i} className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
                             <p className="font-medium text-gray-900">{item.title}</p>

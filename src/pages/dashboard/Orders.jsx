@@ -9,7 +9,13 @@ const Orders = () => {
   const { data: orders = [], error, isLoading, refetch } = useGetOrdersQuery();
   const [updatingOrderId, setUpdatingOrderId] = useState(null);
 
+  // --- THÊM DÒNG NÀY ---
+  // Lọc để chỉ lấy các đơn hàng hợp lệ (được tạo bằng model mới và có items)
+  const validOrders = orders.filter(order => order.items && order.items.length > 0);
+  // --- KẾT THÚC THÊM ---
+
   const handleUpdateStatus = async (orderId, currentStatus) => {
+    // ... (Giữ nguyên nội dung hàm handleUpdateStatus) ...
     const statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
     
     const { value: newStatus } = await Swal.fire({
@@ -69,6 +75,7 @@ const Orders = () => {
 
   if (isLoading) return <Loading />;
   if (error) {
+    // ... (Giữ nguyên phần xử lý lỗi) ...
     return (
       <div className="text-red-500 text-center p-6 bg-red-50 rounded-lg">
         <p className="font-bold">Failed to load orders</p>
@@ -106,13 +113,15 @@ const Orders = () => {
         </button>
       </div>
 
-      {orders.length === 0 ? (
+      {/* THAY THẾ 'orders.length' BẰNG 'validOrders.length' */}
+      {validOrders.length === 0 ? (
         <div className="text-center py-10 text-gray-500">
           <p className="text-lg">No orders found.</p>
         </div>
       ) : (
         <div className="grid gap-6">
-          {orders.map((order) => (
+          {/* THAY THẾ 'orders.map' BẰNG 'validOrders.map' */}
+          {validOrders.map((order) => (
             <div key={order._id} className="bg-white p-6 rounded-lg shadow">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -143,6 +152,7 @@ const Orders = () => {
               <div className="border-t pt-4">
                 <p className="font-medium mb-2">Items:</p>
                 <div className="space-y-2">
+                  {/* Đọc từ order.items (đã sửa ở bước trước) */}
                   {order.items?.map((item, i) => (
                     <div key={item.productId || i} className="flex justify-between text-sm bg-gray-50 p-2 rounded">
                       <span>
