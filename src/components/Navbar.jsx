@@ -8,12 +8,14 @@ import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
 
+// --- BẮT ĐẦU SỬA ---
 const navigation = [
     {name: "Dashboard", href:"/user-dashboard"},
     {name: "Orders", href:"/orders"},
     {name: "Cart Page", href:"/cart"},
-    {name: "Check Out", href:"/checkout"},
+    // {name: "Check Out", href:"/checkout"}, // <-- ĐÃ XÓA DÒNG NÀY
 ]
+// --- KẾT THÚC SỬA ---
 
 const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -69,7 +71,7 @@ const Navbar = () => {
                             currentUser ? <>
                             <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                                 <img 
-                                    src={currentUser.photoURL || avatarImg} // Dùng ảnh Google, nếu không có thì dùng ảnh mặc định
+                                    src={currentUser.photoURL || avatarImg} 
                                     alt="User avatar" 
                                     className={`size-7 rounded-full ${currentUser ? 'ring-2 ring-blue-500' : ''}`} 
                                 />
