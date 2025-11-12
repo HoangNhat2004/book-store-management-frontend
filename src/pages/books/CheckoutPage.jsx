@@ -48,14 +48,14 @@ const CheckoutPage = () => {
     
     const onSubmit = async (data) => {
         // 1. Tạo mảng 'items' từ cartItems (theo schema mới)
-        const items = cartItems.map(item => ({
+        // 1. TẠO PAYLOAD TỐI GIẢN (CHỈ ID VÀ SỐ LƯỢNG)
+        // Chúng ta không gửi title, price, hay totalPrice nữa.
+        const itemsPayload = cartItems.map(item => ({
             productId: item._id,
-            title: item.title,
-            price: item.newPrice, // Lưu giá gốc (USD)
             quantity: item.quantity || 1
         }));
 
-        // 2. Tạo đối tượng đơn hàng cơ bản
+        // 2. TẠO ORDER PAYLOAD (KHÔNG CÓ GIÁ)
         const orderPayload = {
             name: data.name,
             email: currentUser?.email,
@@ -66,9 +66,9 @@ const CheckoutPage = () => {
                 zipcode: data.zipcode
             },
             phone: data.phone,
-            items: items, // <-- Chỉ gửi 'items'
-            totalPrice: totalOrderPriceUSD, 
+            items: itemsPayload, // <-- Gửi payload bảo mật
             status: 'Pending'
+            // KHÔNG GỬI totalPrice
         }
 
         try {
