@@ -7,7 +7,7 @@ import { Link } from'react-router-dom'
 
 import { useDispatch, useSelector } from'react-redux'
 import { addToCart } from '../../redux/features/cart/cartSlice'
-import { addToWishlist } from '../../redux/features/wishlist/wishlistSlice'
+import { addToWishlist, removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice'
 
 const BookCard = ({book}) => {
     const dispatch =  useDispatch();
