@@ -8,6 +8,8 @@ const CartPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
     const dispatch =  useDispatch()
 
+    const hasItems = cartItems.length > 0;
+
     const totalPrice =  cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0).toFixed(2);
 
     const handleRemoveFromCart = (product) => {
@@ -133,8 +135,13 @@ const CartPage = () => {
                     <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
                     <div className="mt-6">
                         <Link
-                            to="/checkout"
-                            className="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700"
+                            to={hasItems ? "/checkout" : "#"} // Chỉ cho phép đến /checkout nếu có hàng
+                            onClick={(e) => !hasItems && e.preventDefault()} // Ngăn bấm vào link nếu rỗng
+                            className={`flex items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm ${
+                                hasItems 
+                                ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
+                                : 'bg-gray-400 cursor-not-allowed' // Đổi màu nếu bị vô hiệu hóa
+                            }`}
                         >
                             Checkout
                         </Link>

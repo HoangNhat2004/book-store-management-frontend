@@ -28,6 +28,16 @@ const CheckoutPage = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
+    const hasItems = cartItems.length > 0; // Biến kiểm tra
+
+    useEffect(() => {
+        // Nếu không loading VÀ không có hàng
+        if (!isLoading && !hasItems) {
+            console.log("Cart is empty, redirecting to /cart...");
+            navigate("/cart");
+        }
+    }, [isLoading, hasItems, navigate]); // Chạy lại khi các giá trị này thay đổi
+
     const [isChecked, setIsChecked] = useState(false)
     
     // --- CẬP NHẬT STATE ---
@@ -109,6 +119,9 @@ const CheckoutPage = () => {
     }
 
     if (isLoading) return <Loading />
+    if (!hasItems) {
+        return <Loading />; // Hoặc trả về null
+    }
     
     return (
         <section>
@@ -238,7 +251,7 @@ const CheckoutPage = () => {
                                         <div className="md:col-span-5 text-right">
                                             <div className="inline-flex items-end">
                                                 <button
-                                                    disabled={!isChecked || isLoading}
+                                                    disabled={!isChecked || isLoading || !hasItems}
                                                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                                     {isLoading ? 'Processing...' : 'Place an Order'}
                                                 </button>
