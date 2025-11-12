@@ -10,10 +10,6 @@ import axios from 'axios'; // <-- THÊM
 import getBaseUrl from '../../utils/baseURL'; // <-- THÊM
 import Loading from '../../components/Loading';
 
-// Giả định 1 USD = 25,000 VND.
-// TRONG THỰC TẾ, bạn nên gọi API tỷ giá hoặc đặt tỷ giá này ở một nơi an toàn.
-const EXCHANGE_RATE_USD_TO_VND = 25000;
-
 const CheckoutPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
     const { currentUser } = useAuth()
@@ -93,14 +89,10 @@ const CheckoutPage = () => {
 
             } else if (paymentMethod === 'vnpay') {
                 // Nếu là VNPay, gọi backend để lấy URL thanh toán
-
-                // 5. Chuyển đổi tổng tiền sang VND
-                const totalAmountVND = Math.round(newOrder.totalPrice * EXCHANGE_RATE_USD_TO_VND);
                 
                 // 6. Gọi API backend để tạo URL
                 const paymentRes = await axios.post(`${getBaseUrl()}/api/payment/create-payment-url`, {
-                    orderId: newOrder._id, // Gửi ID đơn hàng vừa tạo
-                    amountInVND: totalAmountVND // Gửi số tiền đã quy đổi sang VND
+                    orderId: newOrder._id // CHỈ GỬI ID
                 });
 
                 // 7. Xóa giỏ hàng và chuyển hướng người dùng đến VNPay
