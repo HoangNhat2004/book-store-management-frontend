@@ -11,26 +11,25 @@ const cartSlice = createSlice({
     reducers: {
         addToCart: (state, action) => {
             const existingItem = state.cartItems.find(item => item._id === action.payload._id);
+            
+            // --- BẮT ĐẦU SỬA ---
             if (!existingItem) {
+                // Nếu chưa có, thêm mới với số lượng là 1
                 state.cartItems.push({ ...action.payload, quantity: 1 })
-                Swal.fire({
-                    position: "top-end",
-                    icon: "success",
-                    title: "Product Added to the Cart",
-                    showConfirmButton: false,
-                    timer: 1500
-                });
             } else {
-                Swal.fire({
-                    title: "Already Added to the Cart",
-                    text: "You can change quantity in cart page",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonColor: "#3085d6",
-                    cancelButtonColor: "#d33",
-                    confirmButtonText: "OK!"
-                })
+                // Nếu đã có, chỉ tăng số lượng lên 1
+                existingItem.quantity += 1;
             }
+
+            // Luôn luôn hiển thị thông báo thành công
+            Swal.fire({
+                position: "top-end",
+                icon: "success",
+                title: "Product Added to the Cart",
+                showConfirmButton: false,
+                timer: 1500
+            });
+            // --- KẾT THÚC SỬA ---
         },
         removeFromCart: (state, action) => {
             state.cartItems = state.cartItems.filter(item => item._id !== action.payload._id)
