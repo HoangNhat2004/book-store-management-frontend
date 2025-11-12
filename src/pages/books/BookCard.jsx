@@ -13,7 +13,7 @@ const BookCard = ({book}) => {
     const dispatch =  useDispatch();
 
     // 4. Lấy wishlist từ Redux
-    const { wishlistItems } = useSelector(state => state.wishlist);
+    const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
     // 5. Kiểm tra xem sách này đã có trong wishlist chưa
     const isWishlisted = wishlistItems.some(item => item._id === book._id);
 

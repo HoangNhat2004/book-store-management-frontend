@@ -15,7 +15,7 @@ const SingleBook = () => {
     const dispatch =  useDispatch();
 
     // 4. Lấy wishlist và kiểm tra
-    const { wishlistItems } = useSelector(state => state.wishlist);
+    const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
     const isWishlisted = book ? wishlistItems.some(item => item._id === book._id) : false;
 
     const handleAddToCart = (product) => {
