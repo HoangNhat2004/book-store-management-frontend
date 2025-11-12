@@ -6,8 +6,8 @@ import { useAuth } from '../../context/AuthContext';
 import Swal from 'sweetalert2';
 import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
 import { clearCart } from '../../redux/features/cart/cartSlice';
-import axios from 'axios'; // <-- THÊM
-import getBaseUrl from '../../utils/baseURL'; // <-- THÊM
+import axios from 'axios'; 
+import getBaseUrl from '../../utils/baseURL'; 
 import Loading from '../../components/Loading';
 
 const CheckoutPage = () => {
@@ -24,38 +24,37 @@ const CheckoutPage = () => {
     const dispatch = useDispatch()
     const navigate = useNavigate()
 
-    const hasItems = cartItems.length > 0; // Biến kiểm tra
+    const hasItems = cartItems.length > 0; 
 
+    // 1. THÊM STATE MỚI ĐỂ QUẢN LÝ LUỒNG
+    const [orderPlaced, setOrderPlaced] = useState(false);
+
+    // 2. SỬA LẠI useEffect
     useEffect(() => {
-        // Nếu không loading VÀ không có hàng
-        if (!isLoading && !hasItems) {
+        // Chỉ chuyển hướng về /cart NẾU:
+        // 1. Giỏ hàng rỗng (hasItems = false)
+        // 2. VÀ Đơn hàng CHƯA được đặt (orderPlaced = false)
+        if (!isLoading && !hasItems && !orderPlaced) {
             console.log("Cart is empty, redirecting to /cart...");
             navigate("/cart");
         }
-    }, [isLoading, hasItems, navigate]); // Chạy lại khi các giá trị này thay đổi
+    }, [isLoading, hasItems, navigate, orderPlaced]); // Thêm orderPlaced vào dependencies
 
     const [isChecked, setIsChecked] = useState(false)
     
-    // --- CẬP NHẬT STATE ---
-    const [shippingFee] = useState(0); // Tạm thời bỏ qua GHTK, phí ship = 0
-    const [paymentMethod, setPaymentMethod] = useState('cod'); // 'cod' hoặc 'vnpay'
-    // -----------------------
+    const [shippingFee] = useState(0); 
+    const [paymentMethod, setPaymentMethod] = useState('cod'); 
 
-    // Tính toán lại tổng tiền (hiện tại đang là USD)
     const subtotal = cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0);
-    const totalOrderPriceUSD = (Number(subtotal) + Number(shippingFee)); // Tổng tiền USD
+    const totalOrderPriceUSD = (Number(subtotal) + Number(shippingFee)); 
 
     
     const onSubmit = async (data) => {
-        // 1. Tạo mảng 'items' từ cartItems (theo schema mới)
-        // 1. TẠO PAYLOAD TỐI GIẢN (CHỈ ID VÀ SỐ LƯỢNG)
-        // Chúng ta không gửi title, price, hay totalPrice nữa.
         const itemsPayload = cartItems.map(item => ({
             productId: item._id,
             quantity: item.quantity || 1
         }));
 
-        // 2. TẠO ORDER PAYLOAD (KHÔNG CÓ GIÁ)
         const orderPayload = {
             name: data.name,
             email: currentUser?.email,
@@ -66,18 +65,17 @@ const CheckoutPage = () => {
                 zipcode: data.zipcode
             },
             phone: data.phone,
-            items: itemsPayload, // <-- Gửi payload bảo mật
+            items: itemsPayload, 
             status: 'Pending'
-            // KHÔNG GỬI totalPrice
         }
 
         try {
-            // 3. Tạo đơn hàng trong CSDL trước (luôn ở trạng thái Pending)
+            // 3. ĐẶT CỜ BÁO HIỆU: ĐÃ BẮT ĐẦU ĐẶT HÀNG
+            setOrderPlaced(true); 
+
             const newOrder = await createOrder(orderPayload).unwrap();
 
-            // 4. Rẽ nhánh dựa trên phương thức thanh toán
             if (paymentMethod === 'cod') {
-                // Nếu là COD, chỉ cần hiển thị thành công và điều hướng
                 Swal.fire({
                     title: "Confirmed Order (COD)",
                     text: "Your order placed successfully!",
@@ -85,23 +83,22 @@ const CheckoutPage = () => {
                     confirmButtonText: "OK"
                 });
                 dispatch(clearCart());
-                navigate("/orders");
+                navigate("/orders"); // (Giờ sẽ hoạt động đúng)
 
             } else if (paymentMethod === 'vnpay') {
-                // Nếu là VNPay, gọi backend để lấy URL thanh toán
                 
-                // 6. Gọi API backend để tạo URL
                 const paymentRes = await axios.post(`${getBaseUrl()}/api/payment/create-payment-url`, {
-                    orderId: newOrder._id // CHỈ GỬI ID
+                    orderId: newOrder._id 
                 });
 
-                // 7. Xóa giỏ hàng và chuyển hướng người dùng đến VNPay
                 dispatch(clearCart());
                 window.location.href = paymentRes.data.url;
             }
 
         } catch (error) {
             console.error("Error placing order:", error);
+            // 4. NẾU LỖI, ĐẶT CỜ LẠI false ĐỂ USER THỬ LẠI
+            setOrderPlaced(false); 
             Swal.fire({
                 title: 'Error!',
                 text: 'Failed to place an order. Please try again.',
@@ -111,8 +108,11 @@ const CheckoutPage = () => {
     }
 
     if (isLoading) return <Loading />
-    if (!hasItems) {
-        return <Loading />; // Hoặc trả về null
+    
+    // 5. SỬA LẠI LOGIC HIỂN THỊ
+    // (Chỉ render Loading nếu giỏ hàng rỗng VÀ chưa đặt hàng)
+    if (!hasItems && !orderPlaced) {
+        return <Loading />; 
     }
     
     return (
@@ -121,7 +121,6 @@ const CheckoutPage = () => {
                 <div className="container max-w-screen-lg mx-auto">
                     <div>
                         <div>
-                             {/* CẬP NHẬT HIỂN THỊ GIÁ */}
                              <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
                             <p className="text-gray-500 mb-1">Items: {cartItems.length > 0 ? cartItems.length : 0}</p>
                             <p className="text-gray-500 mb-1">Subtotal: ${subtotal.toFixed(2)}</p>
@@ -130,7 +129,6 @@ const CheckoutPage = () => {
                         </div>
 
                         <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
-                            {/* --- THÊM LỰA CHỌN THANH TOÁN --- */}
                             <div className="mb-6">
                                 <p className="font-medium text-lg mb-3">Payment Method</p>
                                 <div className="flex flex-col sm:flex-row gap-4">
@@ -158,7 +156,6 @@ const CheckoutPage = () => {
                                     </label>
                                 </div>
                             </div>
-                            {/* --- KẾT THÚC LỰA CHỌN --- */}
 
                             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3 my-8">
                                 <div className="text-gray-600">
@@ -168,7 +165,6 @@ const CheckoutPage = () => {
 
                                 <div className="lg:col-span-2">
                                     <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 md:grid-cols-5">
-                                        {/* ... (Giữ nguyên các InputField cho tên, email, địa chỉ...) ... */}
                                         <div className="md:col-span-5">
                                             <label htmlFor="full_name">Full Name</label>
                                             <input
