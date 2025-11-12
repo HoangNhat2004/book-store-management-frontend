@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice';
 import { addToCart } from '../../redux/features/cart/cartSlice';
+import { getImgUrl } from '../../utils/getImgUrl';
 
 const WishlistPage = () => {
     const { wishlistItems } = useSelector(state => state.wishlist);
@@ -33,7 +34,7 @@ const WishlistPage = () => {
                                             <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                                 <img
                                                     alt={product.title}
-                                                    src={product.coverImage} // Sử dụng URL trực tiếp
+                                                    src={getImgUrl(product.coverImage)} 
                                                     className="h-full w-full object-cover object-center"
                                                 />
                                             </div>

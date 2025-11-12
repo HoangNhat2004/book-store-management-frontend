@@ -1,26 +1,34 @@
 import React from 'react'
 import { FiShoppingCart } from "react-icons/fi"
-import { HiOutlineHeart } from 'react-icons/hi'
+import { HiOutlineHeart, HiHeart } from 'react-icons/hi'
 import { useParams } from "react-router-dom"
 
 import { getImgUrl } from '../../utils/getImgUrl';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/features/cart/cartSlice';
 import { useFetchBookByIdQuery } from '../../redux/features/books/booksApi';
-import { addToWishlist } from '../../redux/features/wishlist/wishlistSlice';
-
+import { addToWishlist, removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice';
 const SingleBook = () => {
     const {id} = useParams();
     const {data: book, isLoading, isError} = useFetchBookByIdQuery(id);
 
     const dispatch =  useDispatch();
 
+    // 4. Lấy wishlist và kiểm tra
+    const { wishlistItems } = useSelector(state => state.wishlist);
+    const isWishlisted = book ? wishlistItems.some(item => item._id === book._id) : false;
+
     const handleAddToCart = (product) => {
         dispatch(addToCart(product))
     }
 
-    const handleAddToWishlist = (product) => {
-        dispatch(addToWishlist(product))
+    // 5. Sửa thành hàm toggle
+    const handleWishlistToggle = (product) => {
+        if (isWishlisted) {
+            dispatch(removeFromWishlist(product));
+        } else {
+            dispatch(addToWishlist(product));
+        }
     }
 
     if(isLoading) return <div>Loading...</div>
@@ -32,7 +40,7 @@ const SingleBook = () => {
             <div className=''>
                 <div>
                     <img
-                        src={`${getImgUrl(book.coverImage)}`}
+                        src={getImgUrl(book.coverImage)}
                         alt={book.title}
                         className="mb-8"
                     />
@@ -55,11 +63,20 @@ const SingleBook = () => {
                         <span>Add to Cart</span>
                     </button>
                     <button
-                        onClick={() => handleAddToWishlist(book)}
-                        title="Add to Wishlist"
-                        className="p-2 text-gray-500 hover:text-red-500 border rounded-full hover:border-red-500 transition-colors"
+                        onClick={() => handleWishlistToggle(book)}
+                        title={isWishlisted ? "Remove from Wishlist" : "Add to Wishlist"}
+                        // 7. Đổi màu và icon
+                        className={`p-2 border rounded-full transition-colors ${
+                            isWishlisted 
+                            ? 'text-red-500 border-red-500' 
+                            : 'text-gray-500 hover:text-red-500 hover:border-red-500'
+                        }`}
                     >
-                        <HiOutlineHeart className="size-6" />
+                        {isWishlisted ? (
+                            <HiHeart className="size-6" />
+                        ) : (
+                            <HiOutlineHeart className="size-6" />
+                        )}
                     </button>
                 </div>
             </div>
