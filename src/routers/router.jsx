@@ -18,6 +18,7 @@ import UpdateBook from "../pages/dashboard/EditBook/UpdateBook";
 import UserDashboard from "../pages/dashboard/users/UserDashboard";
 import Orders from "../pages/dashboard/Orders";
 import SearchPage from "../pages/SearchPage";
+import WishlistPage from "../pages/books/WishlistPage";
 
 const router = createBrowserRouter([
     {
@@ -63,6 +64,10 @@ const router = createBrowserRouter([
         {
           path: "/search",
           element: <SearchPage/>
+        },
+        { // <-- 2. THÊM ROUTE MỚI
+          path: "/wishlist",
+          element: <WishlistPage/>
         }
       ]
     },

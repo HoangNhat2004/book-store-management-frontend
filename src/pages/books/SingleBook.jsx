@@ -1,11 +1,13 @@
 import React from 'react'
 import { FiShoppingCart } from "react-icons/fi"
+import { HiOutlineHeart } from 'react-icons/hi'
 import { useParams } from "react-router-dom"
 
 import { getImgUrl } from '../../utils/getImgUrl';
 import { useDispatch } from 'react-redux';
 import { addToCart } from '../../redux/features/cart/cartSlice';
 import { useFetchBookByIdQuery } from '../../redux/features/books/booksApi';
+import { addToWishlist } from '../../redux/features/wishlist/wishlistSlice';
 
 const SingleBook = () => {
     const {id} = useParams();
@@ -15,6 +17,10 @@ const SingleBook = () => {
 
     const handleAddToCart = (product) => {
         dispatch(addToCart(product))
+    }
+
+    const handleAddToWishlist = (product) => {
+        dispatch(addToWishlist(product))
     }
 
     if(isLoading) return <div>Loading...</div>
@@ -43,11 +49,19 @@ const SingleBook = () => {
                     <p className="text-gray-700"><strong>Description:</strong> {book.description}</p>
                 </div>
 
-                <button onClick={() => handleAddToCart(book)} className="btn-primary px-6 space-x-1 flex items-center gap-1 ">
-                    <FiShoppingCart className="" />
-                    <span>Add to Cart</span>
-
-                </button>
+                <div className="flex items-center gap-3">
+                    <button onClick={() => handleAddToCart(book)} className="btn-primary px-6 space-x-1 flex items-center gap-1 ">
+                        <FiShoppingCart className="" />
+                        <span>Add to Cart</span>
+                    </button>
+                    <button
+                        onClick={() => handleAddToWishlist(book)}
+                        title="Add to Wishlist"
+                        className="p-2 text-gray-500 hover:text-red-500 border rounded-full hover:border-red-500 transition-colors"
+                    >
+                        <HiOutlineHeart className="size-6" />
+                    </button>
+                </div>
             </div>
         </div>
   )
