@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
+import getBaseUrl from '../utils/baseURL';
 
 const AdminLogin = () => {
   const [message, setMessage] = useState("");
@@ -13,41 +14,46 @@ const AdminLogin = () => {
     setLoading(true);
     setMessage("");
 
-    // KIỂM TRA USERNAME/PASSWORD (KHÔNG GỬI LÊN SERVER)
-    if (data.username !== "admin" || data.password !== "admin123") {
-      setMessage("Invalid username or password");
-      setLoading(false);
-      return;
-    }
-
     try {
-      // LẤY TOKEN TỪ BACKEND
-      const response = await fetch('https://book-store-backend-97tz.onrender.com/api/admin-token');
-      if (!response.ok) throw new Error('Server error');
+      // 1. Gửi thông tin đăng nhập lên backend
+      const response = await fetch(`${getBaseUrl()}/api/auth/admin-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: data.username,
+          password: data.password,
+        }),
+      });
 
-      const { token } = await response.json();
+      const result = await response.json();
 
-      // LƯU TOKEN + USER
+      // 2. Nếu backend báo lỗi (sai pass)
+      if (!response.ok) {
+        throw new Error(result.message || 'Login failed');
+      }
+
+      // 3. Nếu thành công
+      const { token, user } = result;
+
       localStorage.setItem('token', token);
-      localStorage.setItem('adminUser', JSON.stringify({
-        name: 'Admin',
-        email: 'admin@example.com',
-        role: 'admin'
-      }));
+      localStorage.setItem('adminUser', JSON.stringify(user));
 
-      // TỰ ĐỘNG ĐĂNG XUẤT SAU 1 GIỜ
+      // TỰ ĐỘNG ĐĂNG XUẤT SAU 1 GIỜ (Giữ nguyên logic cũ)
       setTimeout(() => {
         localStorage.removeItem('token');
         localStorage.removeItem('adminUser');
         alert('Session expired! Please login again.');
-        navigate('/admin-login');
+        navigate('/admin'); // Sửa thành /admin
       }, 3600 * 1000);
 
       alert("Admin Login successful!");
       navigate('/dashboard');
 
     } catch (error) {
-      setMessage('Server error. Please try again later.');
+      // 4. Hiển thị lỗi từ server (ví dụ: "Invalid username or password")
+      setMessage(error.message);
     } finally {
       setLoading(false);
     }
