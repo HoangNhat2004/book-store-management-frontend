@@ -1,16 +1,30 @@
 // src/redux/features/orders/ordersApi.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import getBaseUrl from "../../../utils/baseURL";
+import { auth } from "../../../firebase/firebase.config";
 
 const ordersApi = createApi({
   reducerPath: 'ordersApi',
   baseQuery: fetchBaseQuery({
     baseUrl: getBaseUrl(),
-    prepareHeaders: (headers) => {
+    prepareHeaders: async (headers, { getState, endpoint }) => {
+        
+        // Lấy admin token (giữ nguyên cho các API admin)
         const token = localStorage.getItem('token');
-        if (token) {
-        headers.set('Authorization', `Bearer ${token}`);
+        
+        // Lấy Firebase token (cho các API user)
+        const currentUser = auth.currentUser;
+        
+        if (currentUser && endpoint !== 'getOrders') {
+            // Nếu là USER (đăng nhập Firebase) VÀ KHÔNG PHẢI gọi API getOrders (của admin)
+            // Lấy ID token mới nhất của Firebase
+            const idToken = await currentUser.getIdToken(true);
+            headers.set('Authorization', `Bearer ${idToken}`);
+        } else if (token && endpoint === 'getOrders') {
+            // Nếu là ADMIN (có token) VÀ đang gọi API getOrders
+            headers.set('Authorization', `Bearer ${token}`);
         }
+        
         return headers;
     },
     }),
