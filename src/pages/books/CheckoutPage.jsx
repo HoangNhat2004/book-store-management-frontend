@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react' // Đảm bảo đã import useEffect
+import React, { useState, useEffect, useCallback } from 'react' // 1. ĐÃ THÊM useCallback
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from "react-hook-form"
 import { Link, useNavigate } from 'react-router-dom';
@@ -8,7 +8,10 @@ import { useCreateOrderMutation } from '../../redux/features/orders/ordersApi';
 import { clearCart } from '../../redux/features/cart/cartSlice';
 import axios from 'axios'; 
 import getBaseUrl from '../../utils/baseURL'; 
-import Loading from '../../components/Loading';
+import Loading from '../../components/Loading'; 
+
+// Tỷ giá (chỉ để hiển thị cho frontend)
+const EXCHANGE_RATE_USD_TO_VND = 25000;
 
 const CheckoutPage = () => {
     const cartItems = useSelector(state => state.cart.cartItems);
@@ -16,7 +19,7 @@ const CheckoutPage = () => {
     const {
         register,
         handleSubmit,
-        watch,
+        watch, // Giữ watch
         formState: { errors },
     } = useForm()
 
@@ -25,31 +28,65 @@ const CheckoutPage = () => {
     const navigate = useNavigate()
 
     const hasItems = cartItems.length > 0; 
-
-    // 1. THÊM STATE MỚI ĐỂ QUẢN LÝ LUỒNG
-    const [orderPlaced, setOrderPlaced] = useState(false);
-
-    // 2. SỬA LẠI useEffect
-    useEffect(() => {
-        // Chỉ chuyển hướng về /cart NẾU:
-        // 1. Giỏ hàng rỗng (hasItems = false)
-        // 2. VÀ Đơn hàng CHƯA được đặt (orderPlaced = false)
-        if (!isLoading && !hasItems && !orderPlaced) {
-            console.log("Cart is empty, redirecting to /cart...");
-            navigate("/cart");
-        }
-    }, [isLoading, hasItems, navigate, orderPlaced]); // Thêm orderPlaced vào dependencies
-
-    const [isChecked, setIsChecked] = useState(false)
     
-    // (Tạm thời bỏ qua GHTK, phí ship = 0)
-    const [shippingFee] = useState(0); 
+    // --- BẮT ĐẦU KHỐI STATE (ĐÃ GHÉP) ---
+    const [orderPlaced, setOrderPlaced] = useState(false); // (Từ code cũ - sửa lỗi COD)
+    const [isChecked, setIsChecked] = useState(false)
+    const [shippingFee, setShippingFee] = useState(0); // (Từ code mới - GHTK)
+    const [isCalculatingFee, setIsCalculatingFee] = useState(false); // (Từ code mới - GHTK)
     const [paymentMethod, setPaymentMethod] = useState('cod'); 
+    // --- KẾT THÚC KHỐI STATE ---
 
     const subtotal = cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0);
     const totalOrderPriceUSD = (Number(subtotal) + Number(shippingFee)); 
 
-    
+    // --- LOGIC TÍNH PHÍ GHTK (Từ code mới) ---
+    const calculateFee = useCallback(async (address) => {
+        setIsCalculatingFee(true);
+        try {
+            const response = await axios.post(`${getBaseUrl()}/api/shipping/calculate-fee`, {
+                address: address
+            });
+            
+            const feeInUSD = (response.data.shippingFee || 0) / EXCHANGE_RATE_USD_TO_VND;
+            
+            setShippingFee(feeInUSD);
+        } catch (error) {
+            console.error("Error calculating shipping fee", error);
+            setShippingFee(0); 
+        } finally {
+            setIsCalculatingFee(false);
+        }
+    }, []); 
+
+    const city = watch("city");
+    const state = watch("state");
+    const address = watch("address");
+    const country = watch("country");
+
+    useEffect(() => {
+        if (city && state && address && country) {
+            const timer = setTimeout(() => {
+                calculateFee({ city, state, address, country });
+            }, 1000); 
+            
+            return () => clearTimeout(timer);
+        }
+    }, [city, state, address, country, calculateFee]);
+    // --- KẾT THÚC LOGIC GHTK ---
+
+
+    // --- LOGIC CHUYỂN HƯỚNG (Từ code cũ) ---
+    useEffect(() => {
+        if (!isLoading && !hasItems && !orderPlaced) {
+            console.log("Cart is empty, redirecting to /cart...");
+            navigate("/cart");
+        }
+    }, [isLoading, hasItems, navigate, orderPlaced]);
+    // --- KẾT THÚC LOGIC CHUYỂN HƯỚNG ---
+
+
+    // --- HÀM onSubmit (ĐÃ GHÉP) ---
     const onSubmit = async (data) => {
         const itemsPayload = cartItems.map(item => ({
             productId: item._id,
@@ -68,12 +105,10 @@ const CheckoutPage = () => {
             phone: data.phone,
             items: itemsPayload, 
             status: 'Pending'
-            // Backend sẽ tự tính totalPrice và shippingFee
         }
 
         try {
-            // 3. ĐẶT CỜ BÁO HIỆU: ĐÃ BẮT ĐẦU ĐẶT HÀNG
-            setOrderPlaced(true); 
+            setOrderPlaced(true); // (Từ code cũ)
 
             const newOrder = await createOrder(orderPayload).unwrap();
 
@@ -85,7 +120,7 @@ const CheckoutPage = () => {
                     confirmButtonText: "OK"
                 });
                 dispatch(clearCart());
-                navigate("/orders"); // (Giờ sẽ hoạt động đúng)
+                navigate("/orders"); // (Sẽ hoạt động đúng)
 
             } else if (paymentMethod === 'vnpay') {
                 
@@ -99,8 +134,7 @@ const CheckoutPage = () => {
 
         } catch (error) {
             console.error("Error placing order:", error);
-            // 4. NẾU LỖI, ĐẶT CỜ LẠI false ĐỂ USER THỬ LẠI
-            setOrderPlaced(false); 
+            setOrderPlaced(false); // (Từ code cũ)
             Swal.fire({
                 title: 'Error!',
                 text: error.data?.message || 'Failed to place an order. Please try again.',
@@ -111,8 +145,7 @@ const CheckoutPage = () => {
 
     if (isLoading) return <Loading />
     
-    // 5. SỬA LẠI LOGIC HIỂN THỊ
-    // (Chỉ render Loading nếu giỏ hàng rỗng VÀ chưa đặt hàng)
+    // Logic render (Từ code cũ)
     if (!hasItems && !orderPlaced) {
         return <Loading />; 
     }
@@ -126,12 +159,18 @@ const CheckoutPage = () => {
                              <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
                             <p className="text-gray-500 mb-1">Items: {cartItems.length > 0 ? cartItems.length : 0}</p>
                             <p className="text-gray-500 mb-1">Subtotal: ${subtotal.toFixed(2)}</p>
-                            {/* Phí ship sẽ được cập nhật bởi logic GHTK (nếu có) */}
-                            <p className="text-gray-500 mb-1">Shipping Fee: ${shippingFee.toFixed(2)}</p>
-                            <p className="font-semibold text-lg text-gray-600 mb-6">Total Price: ${totalOrderPriceUSD.toFixed(2)}</p>
+                            {/* Hiển thị phí GHTK (Từ code mới) */}
+                            <p className="text-gray-500 mb-1">
+                                Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}`}
+                            </p>
+                            <p className="font-semibold text-lg text-gray-600 mb-6">
+                                Total Price: ${totalOrderPriceUSD.toFixed(2)}
+                            </p>
                         </div>
 
                         <div className="bg-white rounded shadow-lg p-4 px-4 md:p-8 mb-6">
+                            {/* ... (Toàn bộ JSX còn lại của form giữ nguyên) ... */}
+                            {/* Payment Method */}
                             <div className="mb-6">
                                 <p className="font-medium text-lg mb-3">Payment Method</p>
                                 <div className="flex flex-col sm:flex-row gap-4">
@@ -160,6 +199,7 @@ const CheckoutPage = () => {
                                 </div>
                             </div>
 
+                            {/* Form */}
                             <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 gap-y-2 text-sm grid-cols-1 lg:grid-cols-3 my-8">
                                 <div className="text-gray-600">
                                     <p className="font-medium text-lg">Personal Details</p>
@@ -242,7 +282,7 @@ const CheckoutPage = () => {
                                         <div className="md:col-span-5 text-right">
                                             <div className="inline-flex items-end">
                                                 <button
-                                                    disabled={!isChecked || isLoading || !hasItems}
+                                                    disabled={!isChecked || isLoading || !hasItems || isCalculatingFee} // Thêm isCalculatingFee
                                                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                                     {isLoading ? 'Processing...' : 'Place an Order'}
                                                 </button>
