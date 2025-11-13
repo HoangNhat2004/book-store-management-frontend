@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react' // Đảm bảo đã import useEffect
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm } from "react-hook-form"
 import { Link, useNavigate } from 'react-router-dom';
@@ -42,6 +42,7 @@ const CheckoutPage = () => {
 
     const [isChecked, setIsChecked] = useState(false)
     
+    // (Tạm thời bỏ qua GHTK, phí ship = 0)
     const [shippingFee] = useState(0); 
     const [paymentMethod, setPaymentMethod] = useState('cod'); 
 
@@ -67,6 +68,7 @@ const CheckoutPage = () => {
             phone: data.phone,
             items: itemsPayload, 
             status: 'Pending'
+            // Backend sẽ tự tính totalPrice và shippingFee
         }
 
         try {
@@ -101,7 +103,7 @@ const CheckoutPage = () => {
             setOrderPlaced(false); 
             Swal.fire({
                 title: 'Error!',
-                text: 'Failed to place an order. Please try again.',
+                text: error.data?.message || 'Failed to place an order. Please try again.',
                 icon: 'error'
             });
         }
@@ -124,6 +126,7 @@ const CheckoutPage = () => {
                              <h2 className="font-semibold text-xl text-gray-600 mb-2">Checkout</h2>
                             <p className="text-gray-500 mb-1">Items: {cartItems.length > 0 ? cartItems.length : 0}</p>
                             <p className="text-gray-500 mb-1">Subtotal: ${subtotal.toFixed(2)}</p>
+                            {/* Phí ship sẽ được cập nhật bởi logic GHTK (nếu có) */}
                             <p className="text-gray-500 mb-1">Shipping Fee: ${shippingFee.toFixed(2)}</p>
                             <p className="font-semibold text-lg text-gray-600 mb-6">Total Price: ${totalOrderPriceUSD.toFixed(2)}</p>
                         </div>
