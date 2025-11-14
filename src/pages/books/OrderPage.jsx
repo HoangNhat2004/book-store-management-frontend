@@ -119,9 +119,9 @@ const OrderPage = () => {
                   <div>
                     <p><strong>Address:</strong></p>
                     <p className="text-gray-600">
-                        {/* Thêm order.address.address vào đây */}
-                     {order.address?.address}, {order.address?.city}, {order.address?.state}, {order.address?.country} {order.address?.zipcode && `- ${order.address.zipcode}`}
-                   </p>
+                    {/* (Đảm bảo có order.address.address) */}
+                    {order.address?.address}, {order.address?.city}, {order.address?.state}, {order.address?.country} {order.address?.zipcode && `- ${order.address.zipcode}`}
+                  </p>
                   </div>
                 </div>
               </div>

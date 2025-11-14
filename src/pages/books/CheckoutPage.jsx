@@ -97,6 +97,7 @@ const CheckoutPage = () => {
             name: data.name,
             email: currentUser?.email,
             address: {
+                address: data.address, // <-- 2. THÊM DÒNG NÀY (ĐỊA CHỈ ĐƯỜNG PHỐ)
                 city: data.city,
                 country: data.country,
                 state: data.state,
