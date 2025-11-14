@@ -15,8 +15,6 @@ const Banner = () => {
             <p className='mb-10 text-lg text-ink/80'> {/* Sửa font chữ */}
               It's time to update your reading list...
             </p>
-
-            <button className='btn-primary'>Subscribe</button>
         </div>
     </div>
   )
