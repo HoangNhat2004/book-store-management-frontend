@@ -5,12 +5,13 @@ import Loading from '../../components/Loading';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import { HiViewGridAdd } from "react-icons/hi";
 import { MdOutlineManageHistory } from "react-icons/md";
+// 1. IMPORT CÁC ICON MỚI
 import { HiMiniChartBar, HiMiniFolder, HiMiniCog6Tooth, HiMiniArrowLeftOnRectangle } from "react-icons/hi2";
+import { IoSearchOutline } from "react-icons/io5"; // <-- 2. THÊM DÒNG NÀY ĐỂ SỬA LỖI
 
 const DashboardLayout = () => {
   
   const navigate = useNavigate()
-  // State cho thanh tìm kiếm
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e) => {
@@ -24,14 +25,13 @@ const DashboardLayout = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('adminUser'); 
-    navigate("/admin") // Chuyển về trang login admin
+    navigate("/admin") 
   }
 
   return (
-    // --- 2. SỬA TOÀN BỘ GIAO DIỆN ---
     <section className="flex bg-paper min-h-screen font-body">
     
-    {/* --- SIDEBAR (Thiết kế lại) --- */}
+    {/* --- SIDEBAR --- */}
     <aside className="hidden sm:flex sm:flex-col w-64 bg-ink text-gray-300">
       <Link to="/dashboard" className="inline-flex items-center justify-center h-20 bg-primary/10">
         <img src="/fav-icon.png" alt="Logo" className="h-10 w-10" />
@@ -74,11 +74,12 @@ const DashboardLayout = () => {
     {/* --- KHU VỰC NỘI DUNG CHÍNH --- */}
     <div className="flex-grow text-ink">
       
-      {/* --- HEADER (Thiết kế lại) --- */}
+      {/* --- HEADER --- */}
       <header className="flex items-center h-20 px-6 sm:px-10 bg-white border-b border-subtle">
         <form onSubmit={handleSearch} className="relative w-full max-w-md">
           <button type="submit" className="absolute h-6 w-6 top-3 left-3 text-gray-400 focus:outline-none">
-            <IoSearchOutline className="h-5 w-5"/>
+            {/* 3. Giờ icon này đã hợp lệ */}
+            <IoSearchOutline className="h-5 w-5"/> 
           </button>
           <input 
             type="text" 
@@ -110,7 +111,7 @@ const DashboardLayout = () => {
         </div>
       </header>
       
-      {/* --- MAIN (Thêm các nút bấm) --- */}
+      {/* --- MAIN --- */}
       <main className="p-6 sm:p-10 space-y-6 ">
         
         <div className="flex flex-col space-y-6 md:space-y-0 md:flex-row justify-between">
@@ -137,7 +138,6 @@ const DashboardLayout = () => {
        <Outlet/>
       </main>
     </div>
-    {/* --- KẾT THÚC SỬA GIAO DIỆN --- */}
   </section>
   )
 }
