@@ -10,9 +10,9 @@ import axios from 'axios';
 import getBaseUrl from '../../../utils/baseURL';
 
 const UpdateBook = () => {
+  // --- (LOGIC GIỮ NGUYÊN) ---
   const { id } = useParams();
   const { data: bookData, isLoading, isError, refetch } = useFetchBookByIdQuery(id);
-  // console.log(bookData)
   const [updateBook] = useUpdateBookMutation();
   const { register, handleSubmit, setValue, reset } = useForm();
   useEffect(() => {
@@ -44,26 +44,22 @@ const UpdateBook = () => {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       })
-      Swal.fire({
-        title: "Book Updated",
-        text: "Your book is updated successfully!",
-        icon: "success",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, It's Okay!"
-      });
+      Swal.fire({ title: "Book Updated", text: "Your book is updated successfully!", icon: "success" });
       await refetch()
     } catch (error) {
       console.log("Failed to update book.");
       alert("Failed to update book.");
     }
   }
+  // --- (KẾT THÚC LOGIC) ---
+  
   if (isLoading) return <Loading />
   if (isError) return <div>Error fetching book data</div>
+
   return (
-    <div className="max-w-lg mx-auto md:p-6 p-3 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Update Book</h2>
+    // --- SỬA GIAO DIỆN ---
+    <div className="max-w-2xl mx-auto md:p-8 p-4 bg-white rounded-lg shadow-sm border border-subtle">
+      <h2 className="text-2xl font-heading font-bold text-ink mb-6">Update Book</h2>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <InputField
@@ -72,7 +68,6 @@ const UpdateBook = () => {
           placeholder="Enter book title"
           register={register}
         />
-
         <InputField
           label="Description"
           name="description"
@@ -80,7 +75,6 @@ const UpdateBook = () => {
           type="textarea"
           register={register}
         />
-
         <SelectField
           label="Category"
           name="category"
@@ -99,41 +93,42 @@ const UpdateBook = () => {
             <input
               type="checkbox"
               {...register('trending')}
-              className="rounded text-blue-600 focus:ring focus:ring-offset-2 focus:ring-blue-500"
+              className="rounded text-primary focus:ring-primary" // Sửa màu
             />
-            <span className="ml-2 text-sm font-semibold text-gray-700">Trending</span>
+            <span className="ml-2 text-sm font-semibold text-ink">Trending</span>
           </label>
         </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+            label="Old Price"
+            name="oldPrice"
+            type="number"
+            placeholder="Old Price"
+            register={register}
+            />
+            <InputField
+            label="New Price"
+            name="newPrice"
+            type="number"
+            placeholder="New Price"
+            register={register}
+            />
+        </div>
+        {/* Sửa lại Input này (Vì bạn bỏ qua lỗi ảnh, nên ta giữ logic nhập tên tệp) */}
         <InputField
-          label="Old Price"
-          name="oldPrice"
-          type="number"
-          placeholder="Old Price"
-          register={register}
-        />
-
-        <InputField
-          label="New Price"
-          name="newPrice"
-          type="number"
-          placeholder="New Price"
-          register={register}
-        />
-
-        <InputField
-          label="Cover Image URL"
+          label="Cover Image Name (e.g., book-1.png)"
           name="coverImage"
           type="text"
-          placeholder="Cover Image URL"
+          placeholder="book-1.png"
           register={register}
         />
 
-        <button type="submit" className="w-full py-2 bg-blue-500 text-white font-bold rounded-md">
+        <button type="submit" className="w-full py-3 btn-primary">
           Update Book
         </button>
       </form>
     </div>
+    // --- KẾT THÚC SỬA GIAO DIỆN ---
   )
 }
 

@@ -19,33 +19,33 @@ const WishlistPage = () => {
 
     return (
         <>
-            <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-xl">
+            <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
                     <div className="flex items-start justify-between">
-                        <div className="text-lg font-medium text-gray-900">My Wishlist</div>
+                        <h2 className="text-2xl font-heading font-bold text-primary">My Wishlist</h2>
                     </div>
 
                     <div className="mt-8">
                         <div className="flow-root">
                             {wishlistItems.length > 0 ? (
-                                <ul role="list" className="-my-6 divide-y divide-gray-200">
+                                <ul role="list" className="-my-6 divide-y divide-subtle">
                                     {wishlistItems.map((product) => (
                                         <li key={product?._id} className="flex py-6">
-                                            <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                                            <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-subtle">
                                                 <img
                                                     alt={product.title}
-                                                    src={getImgUrl(product.coverImage)} 
+                                                    src={getImgUrl(product.coverImage)} // Dùng getImgUrl
                                                     className="h-full w-full object-cover object-center"
                                                 />
                                             </div>
 
                                             <div className="ml-4 flex flex-1 flex-col">
                                                 <div>
-                                                    <div className="flex flex-wrap justify-between text-base font-medium text-gray-900">
+                                                    <div className="flex flex-wrap justify-between text-base font-medium text-ink">
                                                         <h3>
-                                                            <Link to={`/books/${product._id}`}>{product?.title}</Link>
+                                                            <Link to={`/books/${product._id}`} className="font-heading hover:text-primary">{product?.title}</Link>
                                                         </h3>
-                                                        <p className="sm:ml-4">${product?.newPrice}</p>
+                                                        <p className="sm:ml-4 font-heading">${product?.newPrice}</p>
                                                     </div>
                                                     <p className="mt-1 text-sm text-gray-500 capitalize"><strong>Category: </strong>{product?.category}</p>
                                                 </div>
@@ -53,7 +53,7 @@ const WishlistPage = () => {
                                                     <button
                                                         onClick={() => handleAddToCart(product)}
                                                         type="button"
-                                                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                                                        className="font-medium text-primary hover:text-opacity-80"
                                                     >
                                                         Add to Cart
                                                     </button>
@@ -70,18 +70,18 @@ const WishlistPage = () => {
                                     ))}
                                 </ul>
                             ) : (
-                                <p className="text-center text-gray-500 py-10">Your wishlist is empty!</p>
+                                <p className="text-center text-gray-500 py-10 text-lg">Your wishlist is empty!</p>
                             )}
                         </div>
                     </div>
                 </div>
 
-                <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
+                <div className="border-t border-subtle px-4 py-6 sm:px-6">
                     <div className="mt-6 flex justify-center text-center text-sm text-gray-500">
                         <Link to="/">
                             <button
                                 type="button"
-                                className="font-medium text-indigo-600 hover:text-indigo-500 ml-1"
+                                className="font-medium text-primary hover:text-opacity-80 ml-1"
                             >
                                 Continue Shopping
                                 <span aria-hidden="true"> &rarr;</span>

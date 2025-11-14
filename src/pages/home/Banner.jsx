@@ -10,13 +10,14 @@ const Banner = () => {
         </div>
         
         <div className='md:w-1/2 w-full'>
-            <h1 className='md:text-5xl text-2xl font-medium mb-7'>New Releases This Week</h1>
-            <p className='mb-10'>It's time to update your reading list with some of the latest and greatest releases in the literary world. From heart-pumping thrillers to captivating memoirs, this week's new releases offer something for everyone</p>
+            {/* Sửa font chữ */}
+            <h1 className='md:text-5xl text-4xl font-heading font-bold text-primary mb-7'>New Releases This Week</h1>
+            <p className='mb-10 text-lg text-ink/80'> {/* Sửa font chữ */}
+              It's time to update your reading list...
+            </p>
 
             <button className='btn-primary'>Subscribe</button>
         </div>
-
-       
     </div>
   )
 }

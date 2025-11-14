@@ -6,18 +6,23 @@ export default {
   ],
   theme: {
     extend: {
+      // --- THAY THẾ TOÀN BỘ KHỐI NÀY ---
       colors: {
-        'primary': '#FFCE1A',
-        'secondary' : "#0D0842",
-        'blackBG': '#F3F3F3',
-        'Favorite': '#FF5841'
+        'paper': '#FBF9F6',      // Màu nền (giấy cũ)
+        'ink': '#33312E',       // Màu chữ (mực)
+        'primary': '#045D5D',     // Màu chính (xanh teal đậm)
+        'accent': '#E07A5F',      // Màu nhấn (cam đất)
+        'accent-light': '#F2D4C9', // Màu nhấn nhạt (cho hover)
+        'subtle': '#E8E4DD',    // Màu viền (border)
       }, 
       fontFamily: {
-        'primary' : ["Montserrat", "sans-serif"],
-        'secondary' : ["Nunito Sans", "sans-serif"]
+        'heading' : ["Merriweather", "serif"], // Phông chữ tiêu đề
+        'body' : ["Inter", "sans-serif"]      // Phông chữ nội dung
       }
+      // --- KẾT THÚC THAY THẾ ---
     },
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/aspect-ratio'), // (Bạn đã cài cái này ở bước trước)
+  ],
 }
-

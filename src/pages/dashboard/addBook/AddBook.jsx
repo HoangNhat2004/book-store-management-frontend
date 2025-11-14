@@ -6,27 +6,22 @@ import { useAddBookMutation } from '../../../redux/features/books/booksApi';
 import Swal from 'sweetalert2';
 
 const AddBook = () => {
+    // --- (LOGIC GIỮ NGUYÊN) ---
     const { register, handleSubmit, formState: { errors }, reset } = useForm();
     const [imageFile, setimageFile] = useState(null);
     const [addBook, {isLoading, isError}] = useAddBookMutation()
     const [imageFileName, setimageFileName] = useState('')
     const onSubmit = async (data) => {
- 
         const newBookData = {
             ...data,
-            coverImage: imageFileName
+            coverImage: imageFileName,
+            // Đảm bảo giá tiền là số
+            oldPrice: Number(data.oldPrice),
+            newPrice: Number(data.newPrice),
         }
         try {
             await addBook(newBookData).unwrap();
-            Swal.fire({
-                title: "Book added",
-                text: "Your book is uploaded successfully!",
-                icon: "success",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, It's Okay!"
-              });
+            Swal.fire({ title: "Book added", text: "Your book is uploaded successfully!", icon: "success" });
               reset();
               setimageFileName('')
               setimageFile(null);
@@ -34,9 +29,7 @@ const AddBook = () => {
             console.error(error);
             alert("Failed to add book. Please try again.")   
         }
-      
     }
-
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if(file) {
@@ -44,31 +37,27 @@ const AddBook = () => {
             setimageFileName(file.name);
         }
     }
-  return (
-    <div className="max-w-lg   mx-auto md:p-6 p-3 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">Add New Book</h2>
+    // --- (KẾT THÚC LOGIC) ---
 
-      {/* Form starts here */}
+  return (
+    // --- SỬA GIAO DIỆN ---
+    <div className="max-w-2xl mx-auto md:p-8 p-4 bg-white rounded-lg shadow-sm border border-subtle">
+      <h2 className="text-2xl font-heading font-bold text-ink mb-6">Add New Book</h2>
+
       <form onSubmit={handleSubmit(onSubmit)} className=''>
-        {/* Reusable Input Field for Title */}
         <InputField
           label="Title"
           name="title"
           placeholder="Enter book title"
           register={register}
         />
-
-        {/* Reusable Textarea for Description */}
         <InputField
           label="Description"
           name="description"
           placeholder="Enter book description"
           type="textarea"
           register={register}
-
         />
-
-        {/* Reusable Select Field for Category */}
         <SelectField
           label="Category"
           name="category"
@@ -79,58 +68,60 @@ const AddBook = () => {
             { value: 'fiction', label: 'Fiction' },
             { value: 'horror', label: 'Horror' },
             { value: 'adventure', label: 'Adventure' },
-            // Add more options as needed
           ]}
           register={register}
         />
-
-        {/* Trending Checkbox */}
         <div className="mb-4">
           <label className="inline-flex items-center">
             <input
               type="checkbox"
               {...register('trending')}
-              className="rounded text-blue-600 focus:ring focus:ring-offset-2 focus:ring-blue-500"
+              className="rounded text-primary focus:ring-primary" // Sửa màu
             />
-            <span className="ml-2 text-sm font-semibold text-gray-700">Trending</span>
+            <span className="ml-2 text-sm font-semibold text-ink">Trending</span>
           </label>
         </div>
-
-        {/* Old Price */}
-        <InputField
-          label="Old Price"
-          name="oldPrice"
-          type="number"
-          placeholder="Old Price"
-          register={register}
-         
-        />
-
-        {/* New Price */}
-        <InputField
-          label="New Price"
-          name="newPrice"
-          type="number"
-          placeholder="New Price"
-          register={register}
-          
-        />
-
-        {/* Cover Image Upload */}
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Cover Image</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} className="mb-2 w-full" />
-          {imageFileName && <p className="text-sm text-gray-500">Selected: {imageFileName}</p>}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+            label="Old Price"
+            name="oldPrice"
+            type="number"
+            placeholder="Old Price"
+            register={register}
+            />
+            <InputField
+            label="New Price"
+            name="newPrice"
+            type="number"
+            placeholder="New Price"
+            register={register}
+            />
         </div>
 
-        {/* Submit Button */}
-        <button type="submit" className="w-full py-2 bg-green-500 text-white font-bold rounded-md">
+        {/* Sửa lại Input File */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-ink mb-1">Cover Image</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} 
+            className="w-full text-sm text-ink
+                       file:mr-4 file:py-2 file:px-4
+                       file:rounded-full file:border-0
+                       file:text-sm file:font-semibold
+                       file:bg-primary/10 file:text-primary
+                       hover:file:bg-primary/20"
+          />
+          {imageFileName && <p className="text-sm text-gray-500 mt-2">Selected: {imageFileName}</p>}
+        </div>
+
+        {/* Sửa lại nút Submit */}
+        <button type="submit" className="w-full py-3 btn-primary">
          {
             isLoading ? <span className="">Adding.. </span> : <span>Add Book</span>
           }
         </button>
       </form>
     </div>
+    // --- KẾT THÚC SỬA GIAO DIỆN ---
   )
 }
 

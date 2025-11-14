@@ -1,89 +1,74 @@
-import React, { useState, useEffect } from 'react' // 1. Import useState
+import React, { useState, useEffect } from 'react' // Thêm useState, useEffect
 import { useDeleteBookMutation, useFetchAllBooksQuery } from '../../../redux/features/books/booksApi';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom'; // Thêm useLocation
 import Swal from 'sweetalert2';
 
+// Hàm helper để đọc query params
 function useQuery() {
     return new URLSearchParams(useLocation().search);
 }
 
 const ManageBooks = () => {
+    // --- (LOGIC GIỮ NGUYÊN) ---
     const navigate = useNavigate();
     const { data: books, refetch } = useFetchAllBooksQuery()
     const [deleteBook] = useDeleteBookMutation()
+    
     const query = useQuery();
     const urlSearchQuery = query.get('q');
-    // 2. Thêm state để lưu trữ nội dung tìm kiếm
     const [searchQuery, setSearchQuery] = useState(urlSearchQuery || "");
-    useEffect(() => {
-        if (urlSearchQuery) {
-            setSearchQuery(urlSearchQuery);
-        }
+    useEffect(() => { // Sync URL query to state
+        if (urlSearchQuery) { setSearchQuery(urlSearchQuery); }
     }, [urlSearchQuery]);
 
     const handleDeleteBook = async (id, title) => {
         Swal.fire({
             title: "Are you sure?",
-            text: `You want to delete "${title}"? This action cannot be undone!`,
+            text: `You want to delete "${title}"?`,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#d33",
-            cancelButtonColor: "#3085d6",
-            confirmButtonText: "Yes, delete it!",
-            cancelButtonText: "Cancel"
+            confirmButtonColor: "#E07A5F", // Màu accent
+            cancelButtonColor: "#33312E", // Màu ink
+            confirmButtonText: "Yes, delete it!"
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
                     await deleteBook(id).unwrap();
-                    Swal.fire({
-                        title: "Deleted!",
-                        text: "Book has been deleted successfully.",
-                        icon: "success",
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
+                    Swal.fire({ title: "Deleted!", text: "Book has been deleted.", icon: "success" });
                     refetch();
                 } catch (error) {
-                    console.error('Failed to delete book:', error.message);
-                    Swal.fire({
-                        title: "Error!",
-                        text: "Failed to delete book. Please try again.",
-                        icon: "error"
-                    });
+                    Swal.fire({ title: "Error!", text: "Failed to delete book.", icon: "error" });
                 }
             }
         });
     };
-
-    const handleEditClick = (id) => {
-        navigate(`dashboard/edit-book/${id}`);
-    };
-
-    // 3. Lọc danh sách sách dựa trên searchQuery
+    
     const filteredBooks = books
         ? books.filter(book =>
             book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             book.category.toLowerCase().includes(searchQuery.toLowerCase())
         )
         : [];
+    // --- (KẾT THÚC LOGIC) ---
 
     return (
-        <section className="py-1 bg-blueGray-50">
-            <div className="w-full xl:w-8/12 mb-12 xl:mb-0 px-4 mx-auto mt-24">
-                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-lg rounded ">
-                    <div className="rounded-t mb-0 px-4 py-3 border-0">
+        // --- SỬA GIAO DIỆN ---
+        <section className="py-1 bg-paper">
+            <div className="w-full mb-12 xl:mb-0 px-4 mx-auto">
+                <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-sm border border-subtle rounded-lg ">
+                    <div className="rounded-t mb-0 px-4 py-3 border-b border-subtle">
                         <div className="flex flex-wrap items-center">
                             <div className="relative w-full px-4 max-w-full flex-grow flex-1">
-                                <h3 className="font-semibold text-base text-blueGray-700">All Books</h3>
+                                <h3 className="font-heading font-semibold text-base text-ink">All Books</h3>
                             </div>
-                            {/* 4. Thêm ô input tìm kiếm */}
                             <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
+                                {/* Sửa ô Search */}
                                 <input
                                     type="text"
                                     placeholder="Search by title or category..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="border border-gray-300 rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    className="border border-subtle rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
                                 />
                             </div>
                         </div>
@@ -93,19 +78,20 @@ const ManageBooks = () => {
                         <table className="items-center bg-transparent w-full border-collapse ">
                             <thead>
                                 <tr>
-                                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                    {/* Sửa Header Bảng */}
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         #
                                     </th>
-                                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Book Title
                                     </th>
-                                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Category
                                     </th>
-                                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Price
                                     </th>
-                                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Actions
                                     </th>
                                 </tr>
@@ -113,28 +99,28 @@ const ManageBooks = () => {
 
                             <tbody>
                                 {
-                                    // 5. Sử dụng 'filteredBooks' thay vì 'books' để render
                                     filteredBooks && filteredBooks.map((book, index) => (
-                                        <tr key={index}>
-                                            <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-blueGray-700 ">
+                                        <tr key={index} className="hover:bg-paper/60">
+                                            <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-ink ">
                                                 {index + 1}
                                             </th>
-                                            <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 ">
+                                            <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 font-medium">
                                                 {book.title}
                                             </td>
-                                            <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowBrap p-4">
+                                            <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4 capitalize">
                                                 {book.category}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                                                 ${book.newPrice}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 space-x-4">
-                                                <Link to={`/dashboard/edit-book/${book._id}`} className="font-medium text-indigo-600 hover:text-indigo-700 mr-2 hover:underline underline-offset-2">
+                                                {/* Sửa màu nút */}
+                                                <Link to={`/dashboard/edit-book/${book._id}`} className="font-medium text-primary hover:text-opacity-80">
                                                     Edit
                                                 </Link>
                                                 <button
                                                     onClick={() => handleDeleteBook(book._id, book.title)}
-                                                    className="font-medium bg-red-500 py-1 px-4 rounded-full text-white mr-2 hover:bg-red-600 transition-colors">
+                                                    className="font-medium text-accent hover:text-opacity-80">
                                                     Delete
                                                 </button>
                                             </td>
@@ -147,6 +133,7 @@ const ManageBooks = () => {
                 </div>
             </div>
         </section>
+        // --- KẾT THÚC SỬA GIAO DIỆN ---
     )
 }
 

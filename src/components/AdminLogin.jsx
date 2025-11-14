@@ -60,32 +60,32 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className='h-screen flex justify-center items-center'>
-      <div className='w-full max-w-sm mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4'>
-        <h2 className='text-xl font-semibold mb-4'>Admin Dashboard Login</h2>
+    <div className='h-screen flex justify-center items-center bg-paper'>
+      <div className='w-full max-w-sm mx-auto bg-white shadow-lg border border-subtle rounded-lg px-8 pt-6 pb-8 mb-4'>
+        <h2 className='text-3xl font-heading font-bold mb-6 text-center text-primary'>Admin Login</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className='mb-4'>
-            <label className='block text-gray-700 text-sm font-bold mb-2' htmlFor="username">
+            <label className='block text-ink text-sm font-bold mb-2' htmlFor="username">
               Username
             </label>
             <input 
               {...register("username", { required: true })} 
               type="text" 
               placeholder='username'
-              className='shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow'
+              className='shadow appearance-none border border-subtle rounded w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
             />
           </div>
 
-          <div className='mb-4'>
-            <label className='block text-gray-700 text-sm font-bold mb-2' htmlFor="password">
+          <div className='mb-6'>
+            <label className='block text-ink text-sm font-bold mb-2' htmlFor="password">
               Password
             </label>
             <input 
               {...register("password", { required: true })} 
               type="password" 
               placeholder='Password'
-              className='shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow'
+              className='shadow appearance-none border border-subtle rounded w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
             />
           </div>
 
@@ -95,14 +95,12 @@ const AdminLogin = () => {
             <button 
               type="submit"
               disabled={loading}
-              className='bg-blue-500 w-full hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none disabled:opacity-50'
+              className='bg-primary w-full text-white font-bold py-3 px-8 rounded-md hover:bg-opacity-90 transition-opacity focus:outline-none disabled:opacity-50'
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </div>
         </form>
-
-        <p className='mt-5 text-center text-gray-500 text-xs'>©2025 Book Store. All rights reserved.</p>
       </div>
     </div>
   );

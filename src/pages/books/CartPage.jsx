@@ -40,33 +40,34 @@ const CartPage = () => {
     };
     return (
         <>
-            <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-xl">
+            <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
                     <div className="flex items-start justify-between">
-                        <div className="text-lg font-medium text-gray-900">Shopping cart</div>
+                        <h2 className="text-2xl font-heading font-bold text-primary">Shopping cart</h2>
                         <div className="ml-3 flex h-7 items-center ">
-                            <button
-                                type="button"
-                                onClick={handleClearCart }
-                                className="relative -m-2 py-1 px-2 bg-red-500 text-white rounded-md hover:bg-secondary transition-all duration-200  "
-                            >
-                                <span className="">Clear Cart</span>
-                            </button>
+                            {hasItems && ( // Chỉ hiển thị nút Clear nếu có hàng
+                                <button
+                                    type="button"
+                                    onClick={handleClearCart}
+                                    className="relative -m-2 py-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-200"
+                                >
+                                    <span className="font-medium">Clear Cart</span>
+                                </button>
+                            )}
                         </div>
                     </div>
 
                     <div className="mt-8">
                         <div className="flow-root">
-
                             {
-                                cartItems.length > 0 ? (
-                                    <ul role="list" className="-my-6 divide-y divide-gray-200">
+                                hasItems ? (
+                                    <ul role="list" className="-my-6 divide-y divide-subtle">
                                         {
                                             cartItems.map((product) => (
                                                 <li key={product?._id} className="flex py-6">
-                                                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
+                                                    <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-subtle">
                                                         <img
-                                                            alt=""
+                                                            alt={product?.title}
                                                             src={`${getImgUrl(product?.coverImage)}`}
                                                             className="h-full w-full object-cover object-center"
                                                         />
@@ -74,16 +75,17 @@ const CartPage = () => {
 
                                                     <div className="ml-4 flex flex-1 flex-col">
                                                         <div>
-                                                            <div className="flex flex-wrap justify-between text-base font-medium text-gray-900">
+                                                            <div className="flex flex-wrap justify-between text-base font-medium text-ink">
                                                                 <h3>
-                                                                    <Link to='/'>{product?.title}</Link>
+                                                                    <Link to={`/books/${product._id}`} className="font-heading hover:text-primary">{product?.title}</Link>
                                                                 </h3>
-                                                                <p className="sm:ml-4">${product?.newPrice}</p>
+                                                                <p className="sm:ml-4 font-heading">${product?.newPrice}</p>
                                                             </div>
                                                             <p className="mt-1 text-sm text-gray-500 capitalize"><strong>Category: </strong>{product?.category}</p>
                                                         </div>
                                                         <div className="flex flex-1 flex-wrap items-end justify-between space-y-2 text-sm">
-                                                            <div className="flex items-center border border-gray-200 rounded">
+                                                            {/* Sửa lại Qty */}
+                                                            <div className="flex items-center border border-subtle rounded">
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => handleDecreaseQuantity(product)}
@@ -91,7 +93,7 @@ const CartPage = () => {
                                                                 >
                                                                     -
                                                                 </button>
-                                                                <span className="w-10 text-center font-medium text-gray-700">
+                                                                <span className="w-10 text-center font-medium text-ink">
                                                                     {product.quantity || 1}
                                                                 </span>
                                                                 <button
@@ -106,7 +108,7 @@ const CartPage = () => {
                                                             <div className="flex">
                                                                 <button
                                                                 onClick={() => handleRemoveFromCart(product)}
-                                                                type="button" className="font-medium text-indigo-600 hover:text-indigo-500">
+                                                                type="button" className="font-medium text-red-600 hover:text-red-500">
                                                                     Remove
                                                                 </button>
                                                             </div>
@@ -115,32 +117,28 @@ const CartPage = () => {
                                                 </li>
                                             ))
                                         }
-
-
-
                                     </ul>
-                                ) : (<p>No product found!</p>)
+                                ) : (<p className="text-center text-gray-500 py-10 text-lg">Your cart is empty!</p>)
                             }
-
-
                         </div>
                     </div>
                 </div>
 
-                <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
-                    <div className="flex justify-between text-base font-medium text-gray-900">
-                        <p>Subtotal</p>
-                        <p>${totalPrice ? totalPrice : 0}</p>
+                <div className="border-t border-subtle px-4 py-6 sm:px-6">
+                    <div className="flex justify-between text-base font-medium text-ink">
+                        <p className="font-heading">Subtotal</p>
+                        <p className="font-heading">${totalPrice ? totalPrice : 0}</p>
                     </div>
                     <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
                     <div className="mt-6">
                         <Link
-                            to={hasItems ? "/checkout" : "#"} // Chỉ cho phép đến /checkout nếu có hàng
-                            onClick={(e) => !hasItems && e.preventDefault()} // Ngăn bấm vào link nếu rỗng
+                            to={hasItems ? "/checkout" : "#"}
+                            onClick={(e) => !hasItems && e.preventDefault()}
+                            // Sửa lại nút Checkout
                             className={`flex items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm ${
                                 hasItems 
-                                ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' 
-                                : 'bg-gray-400 cursor-not-allowed' // Đổi màu nếu bị vô hiệu hóa
+                                ? 'bg-accent hover:bg-opacity-90 cursor-pointer' 
+                                : 'bg-gray-400 cursor-not-allowed'
                             }`}
                         >
                             Checkout
@@ -151,8 +149,7 @@ const CartPage = () => {
                             or
                             <button
                                 type="button"
-
-                                className="font-medium text-indigo-600 hover:text-indigo-500 ml-1"
+                                className="font-medium text-primary hover:text-opacity-80 ml-1"
                             >
                                 Continue Shopping
                                 <span aria-hidden="true"> &rarr;</span>

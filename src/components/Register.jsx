@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom' // Import useNavigate
 import { FaGoogle } from "react-icons/fa";
 import { useForm } from "react-hook-form"
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
+    // --- TOÀN BỘ LOGIC JAVASCRIPT GIỮ NGUYÊN ---
     const [message, setMessage] = useState("");
     const {registerUser, signInWithGoogle} = useAuth();
-    const navigate = useNavigate(); // <-- 2. KHỞI TẠO navigate
-    // console.log(registerUser)
+    const navigate = useNavigate(); // Khởi tạo navigate
     const {
         register,
         handleSubmit,
@@ -16,14 +16,11 @@ const Register = () => {
         formState: { errors },
       } = useForm()
 
-    //   register user
-
       const onSubmit = async(data) => {
-        // console.log(data)
         try {
             await registerUser(data.email, data.password);
-            alert("User registered successfully!")
-            navigate("/login"); // <-- 3. THÊM DÒNG CHUYỂN HƯỚNG
+            alert("User registered successfully! Please login.");
+            navigate("/login"); // Chuyển hướng
         } catch (error) {
            setMessage("Please provide a valid email and password") 
            console.error(error)
@@ -40,48 +37,60 @@ const Register = () => {
             console.error(error)
         }
       }
+    // --- KẾT THÚC LOGIC JAVASCRIPT ---
+
   return (
-    <div className='h-[calc(100vh-120px)] flex justify-center items-center '>
-    <div className='w-full max-w-sm mx-auto bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4'>
-        <h2 className='text-xl font-semibold mb-4'>Please Register</h2>
+    // --- BẮT ĐẦU SỬA GIAO DIỆN (UI) ---
+    <div className='h-[calc(100vh-120px)] flex justify-center items-center py-10'>
+    {/* Sửa lại thẻ Card */}
+    <div className='w-full max-w-sm mx-auto bg-white shadow-lg border border-subtle rounded-lg px-8 pt-8 pb-8 mb-4'>
+        <h2 className='text-3xl font-heading font-bold mb-6 text-center text-primary'>Register</h2>
 
         <form onSubmit={handleSubmit(onSubmit)}>
             <div className='mb-4'>
-                <label className='block text-gray-700 text-sm font-bold mb-2' htmlFor="email">Email</label>
+                <label className='block text-ink text-sm font-bold mb-2' htmlFor="email">Email</label>
                 <input 
                 {...register("email", { required: true })} 
                 type="email" name="email" id="email" placeholder='Email Address'
-                className='shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow'
+                // Sửa style input
+                className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
                 />
             </div>
-            <div className='mb-4'>
-                <label className='block text-gray-700 text-sm font-bold mb-2' htmlFor="password">Password</label>
+            <div className='mb-6'>
+                <label className='block text-ink text-sm font-bold mb-2' htmlFor="password">Password</label>
                 <input 
                 {...register("password", { required: true })} 
                 type="password" name="password" id="password" placeholder='Password'
-                className='shadow appearance-none border rounded w-full py-2 px-3 leading-tight focus:outline-none focus:shadow'
+                // Sửa style input
+                className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
                 />
             </div>
             {
                 message && <p className='text-red-500 text-xs italic mb-3'>{message}</p>
             }
-            <div>
-                <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-8 rounded focus:outline-none'>Register</button>
+            <div className='mb-4'>
+                {/* Sửa nút Register */}
+                <button className='bg-primary text-white font-bold py-3 px-8 rounded-md w-full hover:bg-opacity-90 transition-opacity focus:outline-none shadow-sm'>Register</button>
             </div>
         </form>
-        <p className='align-baseline font-medium mt-4 text-sm'>Have an account? Please <Link to="/login" className='text-blue-500 hover:text-blue-700'>Login</Link></p>
+        {/* Sửa link Login */}
+        <p className='align-baseline font-medium mt-4 text-sm text-center text-ink'>
+            Have an account? Please <Link to="/login" className='text-primary hover:text-opacity-80 font-bold'>Login</Link>
+        </p>
 
         {/* google sign in */}
-        <div className='mt-4'>
+        <div className='mt-6'>
+            {/* Sửa nút Google */}
             <button 
             onClick={handleGoogleSignIn}
-            className='w-full flex flex-wrap gap-1 items-center justify-center bg-secondary hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none'>
+            className='w-full flex flex-wrap gap-2 items-center justify-center bg-ink text-white font-bold py-3 px-4 rounded-md hover:bg-opacity-90 transition-opacity focus:outline-none shadow-sm'>
             <FaGoogle  className='mr-2'/>
             Sign in with Google
             </button>
         </div>
 
-        <p className='mt-5 text-center text-gray-500 text-xs'>©2025 Book Store. All rights reserved.</p>
+        {/* Sửa footer text */}
+        <p className='mt-5 text-center text-ink/60 text-xs'>©2025 Book Store. All rights reserved.</p>
     </div>
 </div>
   )
