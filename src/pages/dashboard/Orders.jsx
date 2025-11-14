@@ -97,7 +97,7 @@ const Orders = () => {
                     <strong>Customer:</strong> {order.name} ({order.email})
                   </p>
                   <p className="text-sm text-gray-600">
-                    <strong>Address:</strong> {order.address?.city}, {order.address?.country}
+                    <strong>Address:</strong> {order.address?.address}, {order.address?.city}, {order.address?.country}
                   </p>
                   <p className="text-sm text-gray-600"><strong>Phone:</strong> {order.phone}</p>
                 </div>
