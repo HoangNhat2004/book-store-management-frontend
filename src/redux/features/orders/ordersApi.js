@@ -1,7 +1,7 @@
 // src/redux/features/orders/ordersApi.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import getBaseUrl from "../../../utils/baseURL";
-import { auth } from "../../../firebase/firebase.config";
+import { auth } from "../../../firebase/firebase.config"; 
 
 const ordersApi = createApi({
   reducerPath: 'ordersApi',
@@ -9,25 +9,27 @@ const ordersApi = createApi({
     baseUrl: getBaseUrl(),
     prepareHeaders: async (headers, { getState, endpoint }) => {
         
-        // Lấy admin token (giữ nguyên cho các API admin)
-        const token = localStorage.getItem('token');
+        const adminToken = localStorage.getItem('token'); // Token của Admin
+        const userToken = localStorage.getItem('userToken'); // Token của User (JWT)
+        const firebaseUser = auth.currentUser;
         
-        // Lấy Firebase token (cho các API user)
-        const currentUser = auth.currentUser;
-        
-        if (currentUser && endpoint !== 'getOrders') {
-            // Nếu là USER (đăng nhập Firebase) VÀ KHÔNG PHẢI gọi API getOrders (của admin)
-            // Lấy ID token mới nhất của Firebase
-            const idToken = await currentUser.getIdToken(true);
+        if (endpoint === 'getOrders') {
+            // ADMIN API: Dùng Admin Token
+            if (adminToken) headers.set('Authorization', `Bearer ${adminToken}`);
+        }
+        else if (userToken) {
+            // USER API (JWT): Dùng User Token
+            headers.set('Authorization', `Bearer ${userToken}`);
+        }
+        else if (firebaseUser) {
+             // USER API (FIREBASE): Dùng Firebase Token
+            const idToken = await firebaseUser.getIdToken(true);
             headers.set('Authorization', `Bearer ${idToken}`);
-        } else if (token && endpoint === 'getOrders') {
-            // Nếu là ADMIN (có token) VÀ đang gọi API getOrders
-            headers.set('Authorization', `Bearer ${token}`);
         }
         
         return headers;
     },
-    }),
+  }),
   tagTypes: ['Orders'],
   endpoints: (builder) => ({
     // 1. Tạo đơn hàng

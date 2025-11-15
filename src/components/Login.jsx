@@ -17,7 +17,7 @@ const Login = () => {
 
       const onSubmit = async (data) => {
         try {
-            await loginUser(data.email, data.password);
+            await loginUser(data.identifier, data.password);
             alert("Login successful!");
             navigate("/")
         } catch (error) {
@@ -44,11 +44,11 @@ const Login = () => {
 
             <form onSubmit={handleSubmit(onSubmit)}>
                 <div className='mb-4'>
-                    <label className='block text-ink text-sm font-bold mb-2' htmlFor="email">Email</label>
+                    <label className='block text-ink text-sm font-bold mb-2' htmlFor="identifier">Username or Email</label>
                     <input 
-                    {...register("email", { required: true })} 
-                    type="email" name="email" id="email" placeholder='Email Address'
-                    className='shadow appearance-none border border-subtle rounded w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
+                    {...register("identifier", { required: true })} 
+                    type="text" name="identifier" id="identifier" placeholder='Username or Email'
+                    className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
                     />
                 </div>
                 <div className='mb-6'>

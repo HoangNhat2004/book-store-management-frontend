@@ -1,8 +1,17 @@
 import {  createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
-import { createUserWithEmailAndPassword, GoogleAuthProvider, onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signOut } from "firebase/auth";
+import { 
+    // XÓA: createUserWithEmailAndPassword,
+    // XÓA: signInWithEmailAndPassword,
+    GoogleAuthProvider, 
+    onAuthStateChanged, 
+    signInWithPopup, // Giữ lại
+    signOut 
+} from "firebase/auth";
+// --- THÊM IMPORT MỚI ---
 import axios from 'axios';
-import getBaseUrl from "../utils/baseURL";
+import getBaseUrl from "../utils/baseURL"; 
+// --- KẾT THÚC THÊM ---
 
 const AuthContext =  createContext();
 
@@ -17,47 +26,74 @@ export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // register a user
-    const registerUser = async (email,password) => {
-
-        return await createUserWithEmailAndPassword(auth, email, password);
+    // --- SỬA LẠI HÀM registerUser ---
+    const registerUser = async (username, email, password) => {
+        // Gọi API backend
+        return await axios.post(`${getBaseUrl()}/api/auth/register`, {
+            username,
+            email,
+            password,
+            role: 'user' // Đặt vai trò mặc định
+        });
     }
 
-    // login the user
-    const loginUser = async (email, password) => {
-    
-        return await signInWithEmailAndPassword(auth, email, password)
+    // --- SỬA LẠI HÀM loginUser ---
+    const loginUser = async (identifier, password) => {
+        // Gọi API backend
+        const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
+            identifier, // (username hoặc email)
+            password
+        });
+
+        if (response.data && response.data.token) {
+            // Lưu JWT token (chúng ta sẽ dùng nó cho API sau)
+            localStorage.setItem('userToken', response.data.token);
+            // Lưu user (để Navbar và PrivateRoute biết)
+            setCurrentUser(response.data.user);
+        }
+        return response.data;
     }
 
-    // sing up with google
+    // sing up with google (Giữ nguyên, nhưng thêm logic đồng bộ)
     const signInWithGoogle = async () => {
-     
-        return await signInWithPopup(auth, googleProvider)
+        const result = await signInWithPopup(auth, googleProvider);
+        if (result.user) {
+            // Đồng bộ avatar/tên lên backend
+            const {email, displayName, photoURL} = result.user;
+            axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
+                email,
+                username: displayName,
+                photoURL
+            }).catch(err => {
+                console.error("Failed to sync Google user profile to backend:", err);
+            });
+        }
+        return result;
     }
 
-    // logout the user
+    // logout the user (Sửa lại)
     const logout = () => {
-        return signOut(auth)
+        localStorage.removeItem('userToken'); // Xóa JWT token
+        setCurrentUser(null); // Xóa user khỏi state
+        return signOut(auth); // Đăng xuất cả Firebase (nếu đang đăng nhập Google)
     }
 
     // manage user
     useEffect(() => {
+        // 1. Lắng nghe thay đổi của Firebase (cho Google Sign In)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-            setLoading(false);
-
             if(user) {
-              const {email, displayName, photoURL} = user;
-                axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
-                    email,
-                    username: displayName,
-                    photoURL
-                }).catch(err => {
-                    // Không cần làm người dùng lo lắng nếu thất bại
-                    console.error("Failed to sync user profile to backend:", err);
-                });
+                // Nếu là user Google, cập nhật state
+                setCurrentUser(user);
+                // (Logic đồng bộ profile đã chuyển vào hàm signInWithGoogle)
             }
-        })
+            setLoading(false);
+        });
+
+        // 2. Tự động đăng nhập bằng JWT (nếu có)
+        // (Chúng ta sẽ cần một API /me để lấy thông tin user từ token)
+        // (Hiện tại, để đơn giản, chúng ta sẽ tạm bỏ qua bước này,
+        // PrivateRoute sẽ chỉ kiểm tra token)
 
         return () => unsubscribe();
     }, [])
@@ -73,7 +109,7 @@ export const AuthProvide = ({children}) => {
     }
     return (
         <AuthContext.Provider value={value}>
-            {children}
+            {!loading && children} {/* Sửa: Chỉ render khi hết loading */}
         </AuthContext.Provider>
     )
 }

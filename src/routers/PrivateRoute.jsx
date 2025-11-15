@@ -1,16 +1,20 @@
 import React from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Navigate } from 'react-router-dom'
-import Loading from '../components/Loading'; // <-- 1. IMPORT COMPONENT LOADING
+import Loading from '../components/Loading'; 
 
 const PrivateRoute = ({children}) => {
     const {currentUser, loading} = useAuth();
+    
+    // Lấy thêm token JWT (nếu có)
+    const jwtToken = localStorage.getItem('userToken');
 
     if(loading) {
-        // 2. SỬ DỤNG COMPONENT LOADING ĐÃ "LỘT XÁC"
         return <Loading /> 
     }
-    if(currentUser) {
+    
+    // Nếu có user Firebase (Google) HOẶC có JWT Token (Username/Pass)
+    if(currentUser || jwtToken) {
         return children;
     }
   
