@@ -23,10 +23,10 @@ import WishlistPage from "../pages/books/WishlistPage";
 const router = createBrowserRouter([
     {
       path: "/",
-      element: <App/>,
+      element: <App/>, // <-- <App> LÀ GỐC
       children: [
         {
-            path: "/",
+            path: "/", // <-- Trang chủ là con
             element: <Home/>,
         },
         {
@@ -38,45 +38,45 @@ const router = createBrowserRouter([
             element: <div>About</div>
         },
         {
-          path: "/login",
+          path: "/login", // <-- Chuyển vào làm con
           element: <Login/>
         },
         {
-          path: "/register",
+          path: "/register", // <-- Chuyển vào làm con
           element: <Register/>
         },
         {
-          path: "/cart",
+          path: "/cart", // <-- Chuyển vào làm con
           element: <CartPage/>
         },
         {
-          path: "/checkout",
+          path: "/checkout", // <-- Chuyển vào làm con
           element: <PrivateRoute><CheckoutPage/></PrivateRoute>
         },
         {
-          path: "/books/:id",
+          path: "/books/:id", // <-- Chuyển vào làm con
           element: <SingleBook/>
         },
         {
-          path: "/user-dashboard",
+          path: "/user-dashboard", // <-- Chuyển vào làm con
           element: <PrivateRoute><UserDashboard/></PrivateRoute>
         },
         {
-          path: "/search",
+          path: "/search", // <-- Chuyển vào làm con
           element: <SearchPage/>
         },
-        { // <-- 2. THÊM ROUTE MỚI
-          path: "/wishlist",
+        { 
+          path: "/wishlist", // <-- Chuyển vào làm con
           element: <WishlistPage/>
         }
       ]
     },
     {
-      path: "/admin",
+      path: "/admin", // <-- Route Admin (riêng biệt, OK)
       element: <AdminLogin/>
     },
     {
-      path: "/dashboard",
+      path: "/dashboard", // <-- Route Dashboard (riêng biệt, OK)
       element: <AdminRoute>
         <DashboardLayout/>
       </AdminRoute>,

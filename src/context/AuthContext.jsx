@@ -23,7 +23,7 @@ export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // --- SỬA LẠI: registerUser (gửi cả 3 trường) ---
+    // Dùng backend cho register (YÊU CẦU EMAIL)
     const registerUser = async (username, email, password) => {
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
@@ -38,7 +38,7 @@ export const AuthProvide = ({children}) => {
         return response.data;
     }
 
-    // --- SỬA LẠI: loginUser (lưu user vào localStorage) ---
+    // Dùng backend cho login (JWT)
     const loginUser = async (identifier, password) => {
         const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
             identifier, 
@@ -47,21 +47,21 @@ export const AuthProvide = ({children}) => {
 
         if (response.data && response.data.token) {
             localStorage.setItem('userToken', response.data.token); 
-            localStorage.setItem('user', JSON.stringify(response.data.user)); // <-- LƯU USER
+            localStorage.setItem('user', JSON.stringify(response.data.user)); // LƯU USER
             setCurrentUser(response.data.user); 
         }
         return response.data;
     }
 
-    // --- SỬA LẠI: signInWithGoogle (dùng Redirect) ---
+    // Dùng signInWithRedirect cho Google
     const signInWithGoogle = async () => {
         return await signInWithRedirect(auth, googleProvider); 
     }
 
-    // --- SỬA LẠI: logout (xóa cả user) ---
+    // Logout (xóa cả JWT)
     const logout = () => {
         localStorage.removeItem('userToken'); 
-        localStorage.removeItem('user'); // <-- XÓA USER
+        localStorage.removeItem('user'); // XÓA USER
         setCurrentUser(null); 
         return signOut(auth); 
     }
@@ -71,8 +71,7 @@ export const AuthProvide = ({children}) => {
         // 1. Lắng nghe thay đổi của Firebase (cho Google)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
             if(user) { // A. Nếu là user Google
-                setCurrentUser(user); // user Google có 'displayName' và 'photoURL'
-                // Đồng bộ profile
+                setCurrentUser(user);
                 const {email, displayName, photoURL} = user;
                 axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
                     email,
@@ -89,7 +88,6 @@ export const AuthProvide = ({children}) => {
                 
                 if (token && storedUser) {
                     try {
-                       // Khôi phục user từ localStorage (user JWT có 'username' và 'email')
                        setCurrentUser(JSON.parse(storedUser));
                     } catch (e) {
                        console.error("Failed to parse stored user", e);
@@ -105,7 +103,7 @@ export const AuthProvide = ({children}) => {
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
-                    // onAuthStateChanged sẽ xử lý việc set user
+                    // Logic chuyển hướng đã được dời sang App.jsx
                     console.log("Logged in via redirect:", result.user);
                 }
             }).catch((error) => {
@@ -116,7 +114,6 @@ export const AuthProvide = ({children}) => {
 
         return () => unsubscribe();
     }, []) // Mảng rỗng
-
 
 
     const value = {
