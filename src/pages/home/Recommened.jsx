@@ -31,14 +31,14 @@ const Recommened = () => {
                     },
                     768: {
                         slidesPerView: 2,
-                        spaceBetween: 30,
+                        spaceBetween: 30, // Sửa lại
                     },
                     1024: {
-                        slidesPerView: 3,
+                        slidesPerView: 3, // Sửa lại
                         spaceBetween: 30,
                     },
                     1180: {
-                        slidesPerView: 4,
+                        slidesPerView: 4, // Sửa lại
                         spaceBetween: 30,
                     }
                 }}
@@ -48,7 +48,7 @@ const Recommened = () => {
                 {/* (BookCard đã được "lột xác" ở bước trước) */}
                 {
                    books.length > 0 && books.slice(8, 18).map((book, index) => (
-                        <SwiperSlide key={index} className="pb-4">
+                        <SwiperSlide key={index}>
                             <BookCard  book={book} />
                         </SwiperSlide>
                     ))

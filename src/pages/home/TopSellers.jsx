@@ -66,14 +66,14 @@ const TopSellers = () => {
                     },
                     768: {
                         slidesPerView: 2,
-                        spaceBetween: 30, // Tăng khoảng cách
+                        spaceBetween: 30, // Sửa lại
                     },
                     1024: {
-                        slidesPerView: 3, // Hiển thị 3
+                        slidesPerView: 3, // Sửa lại
                         spaceBetween: 30,
                     },
                     1180: {
-                        slidesPerView: 4, // Hiển thị 4
+                        slidesPerView: 4, // Sửa lại
                         spaceBetween: 30,
                     }
                 }}
@@ -83,7 +83,7 @@ const TopSellers = () => {
                 {/* (BookCard đã được "lột xác" ở bước trước) */}
                 {
                    filteredBooks.length > 0 && filteredBooks.map((book, index) => (
-                        <SwiperSlide key={index} className="pb-4">
+                        <SwiperSlide key={index}>
                             <BookCard  book={book} />
                         </SwiperSlide>
                     ))

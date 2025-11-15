@@ -42,10 +42,22 @@ const AllBooks = () => {
                 spaceBetween={30}
                 navigation={true}
                 breakpoints={{
-                    640: { slidesPerView: 1, spaceBetween: 20 },
-                    768: { slidesPerView: 2, spaceBetween: 40 },
-                    1024: { slidesPerView: 2, spaceBetween: 50 },
-                    1180: { slidesPerView: 3, spaceBetween: 50 }
+                    640: {
+                        slidesPerView: 1,
+                        spaceBetween: 20,
+                    },
+                    768: {
+                        slidesPerView: 2,
+                        spaceBetween: 30, // Sửa lại
+                    },
+                    1024: {
+                        slidesPerView: 3, // Sửa lại
+                        spaceBetween: 30,
+                    },
+                    1180: {
+                        slidesPerView: 4, // Sửa lại
+                        spaceBetween: 30,
+                    }
                 }}
                 modules={[Pagination, Navigation]}
                 className="mySwiper"
