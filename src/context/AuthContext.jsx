@@ -13,6 +13,8 @@ import {
 // --- THÊM IMPORT MỚI ---
 import axios from 'axios';
 import getBaseUrl from "../utils/baseURL"; 
+// 1. THÊM IMPORT useNavigate
+import { useNavigate } from "react-router-dom"; 
 
 const AuthContext =  createContext();
 
@@ -26,9 +28,12 @@ const googleProvider = new GoogleAuthProvider();
 export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    // 2. KHỞI TẠO useNavigate
+    const navigate = useNavigate(); 
 
     // --- SỬA LẠI HÀM registerUser (ĐÃ CHUYỂN SANG BACKEND) ---
     const registerUser = async (username, email, password) => {
+        // ... (Giữ nguyên logic)
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
             email,
@@ -44,6 +49,7 @@ export const AuthProvide = ({children}) => {
 
     // --- SỬA LẠI HÀM loginUser (CHUYỂN SANG BACKEND) ---
     const loginUser = async (identifier, password) => {
+        // ... (Giữ nguyên logic)
         const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
             identifier, // (username hoặc email)
             password
@@ -63,6 +69,7 @@ export const AuthProvide = ({children}) => {
 
     // logout the user (Sửa lại)
     const logout = () => {
+        // ... (Giữ nguyên logic)
         localStorage.removeItem('userToken'); // Xóa JWT token
         setCurrentUser(null); 
         return signOut(auth); // Đăng xuất cả Firebase
@@ -91,14 +98,17 @@ export const AuthProvide = ({children}) => {
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
+                    // 3. THÊM CHUYỂN HƯỚNG VỀ TRANG CHỦ KHI THÀNH CÔNG
                     console.log("Logged in via redirect:", result.user);
+                    navigate("/");
                 }
             }).catch((error) => {
                 console.error("Google redirect login error:", error);
             });
 
+        // 4. THÊM navigate VÀO DEPENDENCY ARRAY
         return () => unsubscribe();
-    }, [])
+    }, [navigate])
 
 
     const value = {
