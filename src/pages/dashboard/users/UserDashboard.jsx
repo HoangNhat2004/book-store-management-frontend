@@ -1,22 +1,30 @@
 // src/pages/dashboard/users/UserDashboard.jsx
 import React from 'react';
-import { useAuth } from '../../../context/AuthContext';
-import { useGetOrderByEmailQuery } from '../../../redux/features/orders/ordersApi';
+// --- SỬA LỖI ĐƯỜNG DẪN IMPORT (Dùng đường dẫn tuyệt đối từ root '/src') ---
+import { useAuth } from '/src/context/AuthContext.jsx';
+import { useGetOrderByEmailQuery } from '/src/redux/features/orders/ordersApi.js';
 import { Link } from 'react-router-dom'; // Import Link
+import Loading from '/src/components/Loading.jsx'; 
+// --- KẾT THÚC SỬA LỖI ---
 
 const UserDashboard = () => {
   const { currentUser } = useAuth();
+  
+  // Sửa lỗi 403: Thêm 'skip'
   const { data: orders = [], isLoading, isError } = useGetOrderByEmailQuery(
-    currentUser?.email, 
+    currentUser?.email,
     {
-      skip: !currentUser?.email, // Bỏ qua query nếu chưa có email
+      skip: !currentUser?.email, // Bỏ qua query nếu email là null
     }
   );
 
   // Lọc đơn hàng lỗi
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
 
-  if (isLoading || !currentUser?.email) return <Loading />; // (Sẽ thay)
+  // Sửa lỗi ReferenceError: Dùng component Loading đã import
+  // Thêm kiểm tra !currentUser?.email để đợi email
+  if (isLoading || !currentUser?.email) return <Loading />; 
+  
   if (isError) return <div className="text-center text-red-600 py-20">Error loading orders</div>;
 
   // Hàm helper để lấy màu status
@@ -36,7 +44,7 @@ const UserDashboard = () => {
       <div className="max-w-4xl mx-auto bg-white shadow-sm border border-subtle rounded-xl p-8">
         <h1 className="text-3xl font-heading font-bold text-primary mb-2">User Dashboard</h1>
         <p className="text-gray-700 mb-8">
-          Welcome, <span className="font-semibold text-ink">{currentUser?.displayName || currentUser?.email}</span>! Here are your recent orders:
+          Welcome, <span className="font-semibold text-ink">{currentUser?.displayName || currentUser?.email || currentUser?.username}</span>! Here are your recent orders:
         </p>
 
         <div className="bg-paper p-6 rounded-lg border border-subtle">
