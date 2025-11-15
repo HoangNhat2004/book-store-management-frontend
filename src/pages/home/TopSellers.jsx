@@ -19,7 +19,13 @@ const TopSellers = () => {
     // --- (LOGIC GIỮ NGUYÊN) ---
     const [selectedCategory, setSelectedCategory] = useState("Choose a genre");
     const {data: books = []} = useFetchAllBooksQuery();
-    const filteredBooks = selectedCategory === "Choose a genre" ? books : books.filter(book => book.category === selectedCategory.toLowerCase())
+    // 1. Lọc ra những sách "Top Seller" (trending) trước
+    const topSellingBooks = books.filter(book => book.trending === true);
+
+    // 2. Lọc theo thể loại (category) DỰA TRÊN danh sách topSellingBooks
+    const filteredBooks = selectedCategory === "Choose a genre" 
+        ? topSellingBooks // Nếu không chọn -> hiển thị tất cả sách trending
+        : topSellingBooks.filter(book => book.category === selectedCategory.toLowerCase()) // Nếu có chọn -> lọc tiếp
     // --- (KẾT THÚC LOGIC) ---
 
     return (
