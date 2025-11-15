@@ -1,20 +1,16 @@
 import {  createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
 import { 
-    // XÓA: createUserWithEmailAndPassword,
-    // XÓA: signInWithEmailAndPassword,
     GoogleAuthProvider, 
     onAuthStateChanged, 
-    // signInWithPopup, // Đã bị lỗi COOP
-    signInWithRedirect, // Sửa lỗi COOP
-    getRedirectResult,  // Sửa lỗi COOP
+    signInWithRedirect, 
+    getRedirectResult,  // <-- Giữ lại
     signOut 
 } from "firebase/auth";
-// --- THÊM IMPORT MỚI ---
 import axios from 'axios';
 import getBaseUrl from "../utils/baseURL"; 
-// 1. THÊM IMPORT useNavigate
-import { useNavigate } from "react-router-dom"; 
+// 1. XÓA useNavigate
+// import { useNavigate } from "react-router-dom"; 
 
 const AuthContext =  createContext();
 
@@ -28,15 +24,14 @@ const googleProvider = new GoogleAuthProvider();
 export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    // 2. KHỞI TẠO useNavigate
-    const navigate = useNavigate(); 
+    // 2. XÓA useNavigate
+    // const navigate = useNavigate(); 
 
-    // --- SỬA LẠI HÀM registerUser (ĐÃ CHUYỂN SANG BACKEND) ---
+    // ... (logic registerUser, loginUser giữ nguyên) ...
     const registerUser = async (username, email, password) => {
-        // ... (Giữ nguyên logic)
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
-            email,
+            email: email || null, // Sửa lại để chấp nhận user không có email
             password,
             role: 'user' 
         });
@@ -47,9 +42,7 @@ export const AuthProvide = ({children}) => {
         return response.data;
     }
 
-    // --- SỬA LẠI HÀM loginUser (CHUYỂN SANG BACKEND) ---
     const loginUser = async (identifier, password) => {
-        // ... (Giữ nguyên logic)
         const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
             identifier, // (username hoặc email)
             password
@@ -61,27 +54,24 @@ export const AuthProvide = ({children}) => {
         }
         return response.data;
     }
+    // ...
 
-    // --- SỬA LẠI HÀM GOOGLE (ĐỂ SỬA LỖI COOP) ---
     const signInWithGoogle = async () => {
-        return await signInWithRedirect(auth, googleProvider); // Dùng Redirect
+        return await signInWithRedirect(auth, googleProvider); 
     }
 
-    // logout the user (Sửa lại)
     const logout = () => {
-        // ... (Giữ nguyên logic)
-        localStorage.removeItem('userToken'); // Xóa JWT token
+        localStorage.removeItem('userToken'); 
         setCurrentUser(null); 
-        return signOut(auth); // Đăng xuất cả Firebase
+        return signOut(auth); 
     }
 
     // manage user
     useEffect(() => {
-        // 1. Lắng nghe thay đổi của Firebase (cho Google Sign In)
+        // 1. Lắng nghe thay đổi của Firebase
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
-            if(user) { // Nếu là user Google
+            if(user) { 
                 setCurrentUser(user);
-                // Đồng bộ profile (nếu là user Google)
                 const {email, displayName, photoURL} = user;
                 axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
                     email,
@@ -98,17 +88,17 @@ export const AuthProvide = ({children}) => {
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
-                    // 3. THÊM CHUYỂN HƯỚNG VỀ TRANG CHỦ KHI THÀNH CÔNG
+                    // 3. XÓA CHUYỂN HƯỚNG
                     console.log("Logged in via redirect:", result.user);
-                    navigate("/");
+                    // navigate("/"); // <-- XÓA DÒNG NÀY
                 }
             }).catch((error) => {
                 console.error("Google redirect login error:", error);
             });
 
-        // 4. THÊM navigate VÀO DEPENDENCY ARRAY
+        // 4. XÓA navigate KHỎI DEPENDENCY ARRAY
         return () => unsubscribe();
-    }, [navigate])
+    }, []) // <-- Chỉ còn mảng rỗng
 
 
     const value = {
