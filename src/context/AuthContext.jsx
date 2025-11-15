@@ -1,10 +1,10 @@
 import {  createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
+// 1. IMPORT ĐÚNG CÁC HÀM CẦN THIẾT
 import { 
     GoogleAuthProvider, 
     onAuthStateChanged, 
-    signInWithRedirect, // Dùng Redirect
-    getRedirectResult,  // Dùng Redirect
+    signInWithPopup, // <-- Quay lại dùng Popup
     signOut 
 } from "firebase/auth";
 import axios from 'axios';
@@ -23,11 +23,11 @@ export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // 1. Dùng backend cho register (NHẬN 3 TRƯỜNG)
+    // --- 2. SỬA LẠI: Dùng backend cho register (YÊU CẦU EMAIL) ---
     const registerUser = async (username, email, password) => {
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
-            email: email, // Nhận email (giả) từ Register.jsx
+            email: email, // Gửi email
             password,
             role: 'user' 
         });
@@ -38,8 +38,9 @@ export const AuthProvide = ({children}) => {
         return response.data;
     }
 
-    // 2. Dùng backend cho login (JWT)
+    // --- 3. SỬA LẠI: Dùng backend cho login (JWT) ---
     const loginUser = async (identifier, password) => {
+        // 'identifier' có thể là username hoặc email
         const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
             identifier, 
             password
@@ -47,35 +48,37 @@ export const AuthProvide = ({children}) => {
 
         if (response.data && response.data.token) {
             localStorage.setItem('userToken', response.data.token); 
-            localStorage.setItem('user', JSON.stringify(response.data.user)); 
+            localStorage.setItem('user', JSON.stringify(response.data.user)); // LƯU USER
             setCurrentUser(response.data.user); 
         }
         return response.data;
     }
 
-    // 3. Dùng signInWithRedirect cho Google
+    // --- 4. GIỮ LẠI: Dùng signInWithPopup cho Google ---
     const signInWithGoogle = async () => {
-        return await signInWithRedirect(auth, googleProvider); 
+        return await signInWithPopup(auth, googleProvider)
     }
 
-    // 4. Logout (xóa cả JWT)
+    // --- 5. SỬA LẠI: logout (xóa cả JWT) ---
     const logout = () => {
         localStorage.removeItem('userToken'); 
-        localStorage.removeItem('user'); 
+        localStorage.removeItem('user'); // XÓA USER
         setCurrentUser(null); 
         return signOut(auth); 
     }
 
-    // 5. useEffect (Quản lý cả 2 loại user)
+    // --- 6. SỬA LẠI: useEffect (Quản lý cả 2 loại user) ---
     useEffect(() => {
-        let isMounted = true; 
+        let isMounted = true; // Cờ để tránh set state khi component đã unmount
         
+        // Lắng nghe thay đổi của Firebase (cho Google)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
             if (!isMounted) return;
 
             if(user) { // A. Nếu là user Google
                 setCurrentUser(user);
-                setLoading(false);
+                setLoading(false); // Dừng loading ngay
+                // Đồng bộ profile
                 const {email, displayName, photoURL} = user;
                 axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
                     email,
@@ -91,6 +94,7 @@ export const AuthProvide = ({children}) => {
                 
                 if (token && storedUser) {
                     try {
+                       // Khôi phục user từ localStorage (user JWT có 'username' và 'email')
                        setCurrentUser(JSON.parse(storedUser));
                     } catch (e) {
                        console.error("Failed to parse stored user", e);
@@ -98,28 +102,15 @@ export const AuthProvide = ({children}) => {
                        localStorage.removeItem('user');
                     }
                 }
-                setLoading(false);
+                setLoading(false); // Dừng loading
             }
         });
-
-        // Xử lý kết quả khi quay về từ Google
-        getRedirectResult(auth)
-            .then((result) => {
-                if (result && isMounted) {
-                    console.log("Logged in via redirect:", result.user);
-                    // (Logic chuyển hướng sẽ do App.jsx xử lý)
-                }
-            }).catch((error) => {
-                if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/redirect-cancelled-by-user') {
-                     console.error("Google redirect login error:", error);
-                }
-            });
 
         return () => {
             isMounted = false;
             unsubscribe();
         };
-    }, []) 
+    }, []) // Mảng rỗng
 
 
     const value = {
@@ -132,7 +123,8 @@ export const AuthProvide = ({children}) => {
     }
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {/* Sửa lại: Phải là !loading */}
+            {!loading && children} 
         </AuthContext.Provider>
     )
 }
