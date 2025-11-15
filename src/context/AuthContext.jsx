@@ -3,8 +3,8 @@ import { auth } from "../firebase/firebase.config";
 import { 
     GoogleAuthProvider, 
     onAuthStateChanged, 
-    signInWithRedirect, 
-    getRedirectResult,  
+    signInWithRedirect, // Sửa lỗi COOP
+    getRedirectResult,  // Sửa lỗi COOP
     signOut 
 } from "firebase/auth";
 import axios from 'axios';
@@ -68,8 +68,12 @@ export const AuthProvide = ({children}) => {
 
     // manage user
     useEffect(() => {
+        let isMounted = true; // Cờ để tránh set state khi component đã unmount
+        
         // 1. Lắng nghe thay đổi của Firebase (cho Google)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
+            if (!isMounted) return;
+
             if(user) { // A. Nếu là user Google
                 setCurrentUser(user);
                 const {email, displayName, photoURL} = user;
@@ -102,8 +106,8 @@ export const AuthProvide = ({children}) => {
         // 2. Xử lý kết quả khi quay về từ Google
         getRedirectResult(auth)
             .then((result) => {
-                if (result) {
-                    // Logic chuyển hướng đã được dời sang App.jsx
+                if (result && isMounted) {
+                    // onAuthStateChanged sẽ xử lý việc set user
                     console.log("Logged in via redirect:", result.user);
                 }
             }).catch((error) => {
@@ -112,7 +116,10 @@ export const AuthProvide = ({children}) => {
                 }
             });
 
-        return () => unsubscribe();
+        return () => {
+            isMounted = false;
+            unsubscribe();
+        };
     }, []) // Mảng rỗng
 
 
