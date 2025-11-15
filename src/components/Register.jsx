@@ -46,7 +46,6 @@ const Register = () => {
     // --- KẾT THÚC LOGIC JAVASCRIPT ---
 
   return (
-    // --- BẮT ĐẦU SỬA GIAO DIỆN (UI) ---
     <div className='h-[calc(100vh-120px)] flex justify-center items-center py-10'>
     {/* Sửa lại thẻ Card */}
     <div className='w-full max-w-sm mx-auto bg-white shadow-lg border border-subtle rounded-lg px-8 pt-8 pb-8 mb-4'>
@@ -61,6 +60,9 @@ const Register = () => {
                 className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
                 />
             </div>
+            
+            {/* --- ĐÃ XÓA KHỐI EMAIL Ở ĐÂY --- */}
+
             <div className='mb-6'>
                 <label className='block text-ink text-sm font-bold mb-2' htmlFor="password">Password</label>
                 <input 
