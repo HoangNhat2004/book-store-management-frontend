@@ -1,14 +1,13 @@
 import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom' // Import useNavigate
+import { Link, useNavigate } from 'react-router-dom' 
 import { FaGoogle } from "react-icons/fa";
 import { useForm } from "react-hook-form"
 import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
-    // --- TOÀN BỘ LOGIC JAVASCRIPT GIỮ NGUYÊN ---
     const [message, setMessage] = useState("");
     const {registerUser, signInWithGoogle} = useAuth();
-    const navigate = useNavigate(); // Khởi tạo navigate
+    const navigate = useNavigate(); 
     const {
         register,
         handleSubmit,
@@ -18,12 +17,14 @@ const Register = () => {
 
       const onSubmit = async(data) => {
         try {
-            // --- SỬA LẠI: Gửi cả 3 trường ---
-            await registerUser(data.username, data.email, data.password);
+            // --- SỬA LẠI: Tự động tạo email "giả" ---
+            // Chúng ta gửi email giả vì UserDashboard của bạn cần email để hoạt động
+            const fakeEmail = `${data.username}@bookstore.local`;
+            await registerUser(data.username, fakeEmail, data.password);
+            
             alert("User registered successfully! Please login.");
             navigate("/login"); // Chuyển hướng
         } catch (error) {
-           // Lỗi giờ đây là từ Axios/Backend, không phải Firebase
            const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
            if (errorMessage.includes("already exists")) {
                setMessage("Username or email already exists.");
@@ -37,18 +38,15 @@ const Register = () => {
       const handleGoogleSignIn = async() => {
         try {
             await signInWithGoogle();
-            // Xóa logic alert/navigate ở đây (AuthContext sẽ xử lý)
+            // Không cần alert hay navigate ở đây
         } catch (error) {
             alert("Google sign in failed!") 
             console.error(error)
         }
       }
-    // --- KẾT THÚC LOGIC JAVASCRIPT ---
 
   return (
-    // --- BẮT ĐẦU SỬA GIAO DIỆN (UI) ---
     <div className='h-[calc(100vh-120px)] flex justify-center items-center py-10'>
-    {/* Sửa lại thẻ Card */}
     <div className='w-full max-w-sm mx-auto bg-white shadow-lg border border-subtle rounded-lg px-8 pt-8 pb-8 mb-4'>
         <h2 className='text-3xl font-heading font-bold mb-6 text-center text-primary'>Register</h2>
 
@@ -62,23 +60,13 @@ const Register = () => {
                 />
             </div>
             
-            {/* --- THÊM LẠI KHỐI NÀY --- */}
-            <div className='mb-4'>
-                <label className='block text-ink text-sm font-bold mb-2' htmlFor="email">Email</label>
-                <input 
-                {...register("email", { required: true })} 
-                type="email" name="email" id="email" placeholder='your@email.com'
-                className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
-                />
-            </div>
-            {/* --- KẾT THÚC THÊM --- */}
+            {/* --- ĐÃ XÓA TRƯỜNG EMAIL --- */}
 
             <div className='mb-6'>
                 <label className='block text-ink text-sm font-bold mb-2' htmlFor="password">Password</label>
                 <input 
                 {...register("password", { required: true })} 
                 type="password" name="password" id="password" placeholder='Password'
-                // Sửa style input
                 className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
                 />
             </div>
@@ -86,7 +74,6 @@ const Register = () => {
                 message && <p className='text-red-500 text-xs italic mb-3'>{message}</p>
             }
             <div className='mb-4'>
-                {/* Sửa nút Register */}
                 <button className='bg-primary text-white font-bold py-3 px-8 rounded-md w-full hover:bg-opacity-90 transition-opacity focus:outline-none shadow-sm'>Register</button>
             </div>
         </form>

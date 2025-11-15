@@ -3,6 +3,7 @@ import App from "../App";
 import Home from "../pages/home/Home";
 import Login from "../components/Login";
 import Register from "../components/Register";
+// ... (các import khác giữ nguyên)
 import CartPage from "../pages/books/CartPage";
 import CheckoutPage from "../pages/books/CheckoutPage";
 import SingleBook from "../pages/books/SingleBook";
@@ -19,6 +20,7 @@ import UserDashboard from "../pages/dashboard/users/UserDashboard";
 import Orders from "../pages/dashboard/Orders";
 import SearchPage from "../pages/SearchPage";
 import WishlistPage from "../pages/books/WishlistPage";
+
 
 const router = createBrowserRouter([
     {
@@ -81,6 +83,7 @@ const router = createBrowserRouter([
         <DashboardLayout/>
       </AdminRoute>,
       children:[
+        // ... (các children của dashboard giữ nguyên)
         {
           path: "",
           element: <AdminRoute><Dashboard/></AdminRoute>

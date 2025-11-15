@@ -2,7 +2,6 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-// Sửa import (bỏ useAuth vì nó được dùng trong AppContent)
 import { AuthProvide, useAuth } from './context/AuthContext' 
 import { useEffect } from 'react' 
 
