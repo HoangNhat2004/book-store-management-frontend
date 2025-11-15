@@ -1,11 +1,10 @@
 import {  createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
 import { 
-    // Xóa các hàm cũ của Firebase
     GoogleAuthProvider, 
     onAuthStateChanged, 
-    signInWithRedirect, // Dùng Redirect
-    getRedirectResult,  // Dùng Redirect
+    signInWithRedirect, 
+    getRedirectResult,  
     signOut 
 } from "firebase/auth";
 import axios from 'axios';
@@ -24,12 +23,11 @@ export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // --- SỬA LẠI: Dùng backend cho register ---
-    const registerUser = async (username, password) => {
-        // Gửi request đến backend (chỉ username/password)
+    // --- SỬA LẠI: registerUser (gửi cả 3 trường) ---
+    const registerUser = async (username, email, password) => {
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
-            email: null, // Gửi email là null như đã sửa
+            email: email, // Gửi email
             password,
             role: 'user' 
         });
@@ -40,39 +38,40 @@ export const AuthProvide = ({children}) => {
         return response.data;
     }
 
-    // --- SỬA LẠI: Dùng backend cho login ---
+    // --- SỬA LẠI: loginUser (lưu user vào localStorage) ---
     const loginUser = async (identifier, password) => {
-        // 'identifier' có thể là username hoặc email
         const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
             identifier, 
             password
         });
 
         if (response.data && response.data.token) {
-            localStorage.setItem('userToken', response.data.token); // Lưu JWT Token
-            setCurrentUser(response.data.user); // Cập nhật user từ CSDL
+            localStorage.setItem('userToken', response.data.token); 
+            localStorage.setItem('user', JSON.stringify(response.data.user)); // <-- LƯU USER
+            setCurrentUser(response.data.user); 
         }
         return response.data;
     }
 
-    // --- SỬA LẠI: Dùng signInWithRedirect cho Google ---
+    // --- SỬA LẠI: signInWithGoogle (dùng Redirect) ---
     const signInWithGoogle = async () => {
-        return await signInWithRedirect(auth, googleProvider); // Dùng Redirect
+        return await signInWithRedirect(auth, googleProvider); 
     }
 
-    // --- SỬA LẠI: logout (xóa cả JWT token) ---
+    // --- SỬA LẠI: logout (xóa cả user) ---
     const logout = () => {
-        localStorage.removeItem('userToken'); // Xóa JWT token
+        localStorage.removeItem('userToken'); 
+        localStorage.removeItem('user'); // <-- XÓA USER
         setCurrentUser(null); 
-        return signOut(auth); // Đăng xuất cả Firebase
+        return signOut(auth); 
     }
 
     // manage user
     useEffect(() => {
         // 1. Lắng nghe thay đổi của Firebase (cho Google)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
-            if(user) { // Nếu là user Google
-                setCurrentUser(user);
+            if(user) { // A. Nếu là user Google
+                setCurrentUser(user); // user Google có 'displayName' và 'photoURL'
                 // Đồng bộ profile
                 const {email, displayName, photoURL} = user;
                 axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
@@ -82,23 +81,42 @@ export const AuthProvide = ({children}) => {
                 }).catch(err => {
                     console.error("Failed to sync Google user profile to backend:", err);
                 });
+                setLoading(false);
+            } else {
+                // B. Không phải user Google -> Kiểm tra JWT token
+                const token = localStorage.getItem('userToken');
+                const storedUser = localStorage.getItem('user');
+                
+                if (token && storedUser) {
+                    try {
+                       // Khôi phục user từ localStorage (user JWT có 'username' và 'email')
+                       setCurrentUser(JSON.parse(storedUser));
+                    } catch (e) {
+                       console.error("Failed to parse stored user", e);
+                       localStorage.removeItem('userToken');
+                       localStorage.removeItem('user');
+                    }
+                }
+                setLoading(false);
             }
-            setLoading(false);
         });
 
         // 2. Xử lý kết quả khi quay về từ Google
         getRedirectResult(auth)
             .then((result) => {
                 if (result) {
-                    // Logic chuyển hướng sẽ được xử lý ở App.jsx
+                    // onAuthStateChanged sẽ xử lý việc set user
                     console.log("Logged in via redirect:", result.user);
                 }
             }).catch((error) => {
-                console.error("Google redirect login error:", error);
+                if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/redirect-cancelled-by-user') {
+                     console.error("Google redirect login error:", error);
+                }
             });
 
         return () => unsubscribe();
-    }, [])
+    }, []) // Mảng rỗng
+
 
 
     const value = {

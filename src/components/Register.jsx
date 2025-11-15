@@ -18,6 +18,7 @@ const Register = () => {
 
       const onSubmit = async(data) => {
         try {
+            // --- SỬA LẠI: Gửi cả 3 trường ---
             await registerUser(data.username, data.email, data.password);
             alert("User registered successfully! Please login.");
             navigate("/login"); // Chuyển hướng
@@ -36,8 +37,7 @@ const Register = () => {
       const handleGoogleSignIn = async() => {
         try {
             await signInWithGoogle();
-            alert("Login successful!");
-            navigate("/")
+            // Xóa logic alert/navigate ở đây (AuthContext sẽ xử lý)
         } catch (error) {
             alert("Google sign in failed!") 
             console.error(error)
@@ -46,6 +46,7 @@ const Register = () => {
     // --- KẾT THÚC LOGIC JAVASCRIPT ---
 
   return (
+    // --- BẮT ĐẦU SỬA GIAO DIỆN (UI) ---
     <div className='h-[calc(100vh-120px)] flex justify-center items-center py-10'>
     {/* Sửa lại thẻ Card */}
     <div className='w-full max-w-sm mx-auto bg-white shadow-lg border border-subtle rounded-lg px-8 pt-8 pb-8 mb-4'>
@@ -61,7 +62,16 @@ const Register = () => {
                 />
             </div>
             
-            {/* --- ĐÃ XÓA KHỐI EMAIL Ở ĐÂY --- */}
+            {/* --- THÊM LẠI KHỐI NÀY --- */}
+            <div className='mb-4'>
+                <label className='block text-ink text-sm font-bold mb-2' htmlFor="email">Email</label>
+                <input 
+                {...register("email", { required: true })} 
+                type="email" name="email" id="email" placeholder='your@email.com'
+                className='shadow-inner appearance-none border border-subtle rounded-md w-full py-3 px-4 text-ink leading-tight focus:outline-none focus:ring-1 focus:ring-accent'
+                />
+            </div>
+            {/* --- KẾT THÚC THÊM --- */}
 
             <div className='mb-6'>
                 <label className='block text-ink text-sm font-bold mb-2' htmlFor="password">Password</label>
