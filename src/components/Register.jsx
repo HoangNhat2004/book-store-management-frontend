@@ -22,8 +22,14 @@ const Register = () => {
             alert("User registered successfully! Please login.");
             navigate("/login"); // Chuyển hướng
         } catch (error) {
-           setMessage("Please provide a valid email and password") 
-           console.error(error)
+           // Lỗi giờ đây là từ Axios/Backend, không phải Firebase
+           const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+           if (errorMessage.includes("already exists")) {
+               setMessage("Username or email already exists.");
+           } else {
+               setMessage(errorMessage);
+           }
+           console.error(error);
         }
       }
 

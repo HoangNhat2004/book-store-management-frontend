@@ -11,7 +11,6 @@ import {
 // --- THÊM IMPORT MỚI ---
 import axios from 'axios';
 import getBaseUrl from "../utils/baseURL"; 
-// --- KẾT THÚC THÊM ---
 
 const AuthContext =  createContext();
 
@@ -29,12 +28,17 @@ export const AuthProvide = ({children}) => {
     // --- SỬA LẠI HÀM registerUser ---
     const registerUser = async (username, email, password) => {
         // Gọi API backend
-        return await axios.post(`${getBaseUrl()}/api/auth/register`, {
+        const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
             email,
             password,
             role: 'user' // Đặt vai trò mặc định
         });
+        
+        if (response.data.message !== "User registered successfully") {
+            throw new Error(response.data.message);
+        }
+        return response.data;
     }
 
     // --- SỬA LẠI HÀM loginUser ---
@@ -46,7 +50,7 @@ export const AuthProvide = ({children}) => {
         });
 
         if (response.data && response.data.token) {
-            // Lưu JWT token (chúng ta sẽ dùng nó cho API sau)
+            // Lưu JWT token
             localStorage.setItem('userToken', response.data.token);
             // Lưu user (để Navbar và PrivateRoute biết)
             setCurrentUser(response.data.user);
@@ -80,20 +84,13 @@ export const AuthProvide = ({children}) => {
 
     // manage user
     useEffect(() => {
-        // 1. Lắng nghe thay đổi của Firebase (cho Google Sign In)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
             if(user) {
                 // Nếu là user Google, cập nhật state
                 setCurrentUser(user);
-                // (Logic đồng bộ profile đã chuyển vào hàm signInWithGoogle)
             }
             setLoading(false);
         });
-
-        // 2. Tự động đăng nhập bằng JWT (nếu có)
-        // (Chúng ta sẽ cần một API /me để lấy thông tin user từ token)
-        // (Hiện tại, để đơn giản, chúng ta sẽ tạm bỏ qua bước này,
-        // PrivateRoute sẽ chỉ kiểm tra token)
 
         return () => unsubscribe();
     }, [])
