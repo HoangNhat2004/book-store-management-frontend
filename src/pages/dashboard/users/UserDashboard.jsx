@@ -6,12 +6,17 @@ import { Link } from 'react-router-dom'; // Import Link
 
 const UserDashboard = () => {
   const { currentUser } = useAuth();
-  const { data: orders = [], isLoading, isError } = useGetOrderByEmailQuery(currentUser?.email);
+  const { data: orders = [], isLoading, isError } = useGetOrderByEmailQuery(
+    currentUser?.email, 
+    {
+      skip: !currentUser?.email, // Bỏ qua query nếu chưa có email
+    }
+  );
 
   // Lọc đơn hàng lỗi
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
 
-  if (isLoading) return <div className="text-center py-20">Loading...</div>; // (Sẽ thay)
+  if (isLoading || !currentUser?.email) return <Loading />; // (Sẽ thay)
   if (isError) return <div className="text-center text-red-600 py-20">Error loading orders</div>;
 
   // Hàm helper để lấy màu status
