@@ -1,10 +1,12 @@
 import {  createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
-// 1. IMPORT ĐÚNG CÁC HÀM CẦN THIẾT
+// 1. IMPORT ĐẦY ĐỦ (THÊM LẠI CÁC HÀM BỊ THIẾU)
 import { 
+    createUserWithEmailAndPassword, // <-- Thêm lại
     GoogleAuthProvider, 
     onAuthStateChanged, 
-    signInWithPopup, // <-- Quay lại dùng Popup
+    signInWithEmailAndPassword, // <-- Thêm lại
+    signInWithPopup, 
     signOut 
 } from "firebase/auth";
 import axios from 'axios';
@@ -24,6 +26,7 @@ export const AuthProvide = ({children}) => {
     const [loading, setLoading] = useState(true);
 
     // --- 2. SỬA LẠI: Dùng backend cho register (YÊU CẦU EMAIL) ---
+    // (Đây là logic từ lần trước, nó đúng cho việc đăng ký bằng username/password)
     const registerUser = async (username, email, password) => {
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
             username,
@@ -39,6 +42,7 @@ export const AuthProvide = ({children}) => {
     }
 
     // --- 3. SỬA LẠI: Dùng backend cho login (JWT) ---
+    // (Đây là logic từ lần trước, nó đúng cho việc đăng nhập bằng username/password)
     const loginUser = async (identifier, password) => {
         // 'identifier' có thể là username hoặc email
         const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
@@ -69,16 +73,14 @@ export const AuthProvide = ({children}) => {
 
     // --- 6. SỬA LẠI: useEffect (Quản lý cả 2 loại user) ---
     useEffect(() => {
-        let isMounted = true; // Cờ để tránh set state khi component đã unmount
+        let isMounted = true; 
         
-        // Lắng nghe thay đổi của Firebase (cho Google)
         const unsubscribe =  onAuthStateChanged(auth, (user) => {
             if (!isMounted) return;
 
             if(user) { // A. Nếu là user Google
                 setCurrentUser(user);
-                setLoading(false); // Dừng loading ngay
-                // Đồng bộ profile
+                setLoading(false);
                 const {email, displayName, photoURL} = user;
                 axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
                     email,
@@ -94,7 +96,6 @@ export const AuthProvide = ({children}) => {
                 
                 if (token && storedUser) {
                     try {
-                       // Khôi phục user từ localStorage (user JWT có 'username' và 'email')
                        setCurrentUser(JSON.parse(storedUser));
                     } catch (e) {
                        console.error("Failed to parse stored user", e);
@@ -102,7 +103,7 @@ export const AuthProvide = ({children}) => {
                        localStorage.removeItem('user');
                     }
                 }
-                setLoading(false); // Dừng loading
+                setLoading(false); 
             }
         });
 
@@ -123,7 +124,6 @@ export const AuthProvide = ({children}) => {
     }
     return (
         <AuthContext.Provider value={value}>
-            {/* Sửa lại: Phải là !loading */}
             {!loading && children} 
         </AuthContext.Provider>
     )
