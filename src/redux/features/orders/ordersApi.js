@@ -1,4 +1,4 @@
-// hoangnhat2004/book-store-management-frontend/book-store-management-frontend-192ec3eed487c193b211e0c30f535a79e0e97a86/src/redux/features/orders/ordersApi.js
+// src/redux/features/orders/ordersApi.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import getBaseUrl from "../../../utils/baseURL";
 import { auth } from "../../../firebase/firebase.config"; 
@@ -6,7 +6,6 @@ import { auth } from "../../../firebase/firebase.config";
 const ordersApi = createApi({
   reducerPath: 'ordersApi',
   baseQuery: fetchBaseQuery({
-    // ... (Phần baseQuery giữ nguyên) ...
     baseUrl: getBaseUrl(),
     prepareHeaders: async (headers, { getState, endpoint }) => {
         
@@ -24,7 +23,12 @@ const ordersApi = createApi({
         }
         else if (firebaseUser) {
              // USER API (FIREBASE): Dùng Firebase Token
-            const idToken = await firebaseUser.getIdToken(true);
+             
+             // --- BẮT ĐẦU SỬA ---
+             // Xóa 'true' để dùng token đã cache, tránh lỗi quota
+            const idToken = await firebaseUser.getIdToken(); 
+            // --- KẾT THÚC SỬA ---
+            
             headers.set('Authorization', `Bearer ${idToken}`);
         }
         
@@ -35,7 +39,6 @@ const ordersApi = createApi({
   endpoints: (builder) => ({
     // 1. Tạo đơn hàng
     createOrder: builder.mutation({
-      // ... (Giữ nguyên) ...
       query: (newOrder) => ({
         url: "/api/orders",
         method: "POST",
@@ -46,27 +49,24 @@ const ordersApi = createApi({
 
     // 2. Lấy đơn theo email (user)
     getOrderByEmail: builder.query({
-      // ... (Giữ nguyên) ...
       query: (email) => `/api/orders/email/${email}`,
       providesTags: ['Orders'],
     }),
 
     // 3. LẤY TẤT CẢ ĐƠN HÀNG (ADMIN)
     getOrders: builder.query({
-      // ... (Giữ nguyên) ...
       query: () => "/api/orders",
       providesTags: ['Orders'],
     }),
 
-    // --- 4. THÊM MUTATION MỚI ---
+    // 4. Xác nhận thanh toán
     confirmPayment: builder.mutation({
       query: (orderId) => ({
         url: `/api/orders/${orderId}/confirm-payment`,
         method: "POST",
       }),
-      invalidatesTags: ['Orders'], // Cập nhật lại danh sách Orders
+      invalidatesTags: ['Orders'], 
     }),
-    // --- KẾT THÚC THÊM ---
   }),
 });
 
@@ -75,7 +75,7 @@ export const {
   useCreateOrderMutation, 
   useGetOrderByEmailQuery, 
   useGetOrdersQuery,
-  useConfirmPaymentMutation // <-- Xuất hook mới
+  useConfirmPaymentMutation 
 } = ordersApi;
 
 export default ordersApi;

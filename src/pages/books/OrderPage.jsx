@@ -1,6 +1,5 @@
-// hoangnhat2004/book-store-management-frontend/book-store-management-frontend-192ec3eed487c193b211e0c30f535a79e0e97a86/src/pages/books/OrderPage.jsx
+// src/pages/books/OrderPage.jsx
 import React, { useEffect, useState } from 'react';
-// --- 1. IMPORT HOOK MỚI ---
 import { useGetOrderByEmailQuery, useConfirmPaymentMutation } from '../../redux/features/orders/ordersApi';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
@@ -17,17 +16,17 @@ const OrderPage = () => {
       skip: !currentUser?.email, 
   });
   
-  // --- 2. GỌI HOOK MỚI ---
   const [confirmPayment] = useConfirmPaymentMutation();
   
   const [paymentStatus, setPaymentStatus] = useState(null);
   const query = useQuery();
 
-  // --- 3. SỬA LẠI HOÀN TOÀN useEffect ---
-  useEffect(() => {
-    const responseCode = query.get('vnp_ResponseCode');
-    const orderIdFromVNPay = query.get('vnp_TxnRef'); // Lấy ID đơn hàng từ VNPay
+  // --- BẮT ĐẦU SỬA LỖI LOOP ---
+  // Lấy các giá trị ra khỏi hook để dùng trong dependency array
+  const responseCode = query.get('vnp_ResponseCode');
+  const orderIdFromVNPay = query.get('vnp_TxnRef');
 
+  useEffect(() => {
     // Xóa query params khỏi URL ngay lập tức
     if (responseCode) {
         window.history.replaceState(null, null, window.location.pathname);
@@ -80,22 +79,29 @@ const OrderPage = () => {
         }
     };
 
-    // Chỉ chạy logic nếu có responseCode
+    // Chỉ chạy logic nếu có responseCode (khi effect này chạy lần đầu)
     if (responseCode) {
       handlePaymentResult(responseCode, orderIdFromVNPay);
     }
 
-  }, [refetch, query, confirmPayment]); // Thêm confirmPayment vào dependencies
+  // SỬA LẠI DEPENDENCY ARRAY:
+  // Chỉ chạy lại effect này nếu các giá trị TRONG URL thay đổi
+  // hoặc khi các hàm (refetch, confirmPayment) thay đổi.
+  }, [responseCode, orderIdFromVNPay, refetch, confirmPayment]); 
   // --- KẾT THÚC SỬA ---
 
 
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
 
-  if (isLoading) return <Loading />; 
-  if (isError) return <div className="text-center text-red-600 py-10">Error loading orders</div>;
+  // SỬA HIỂN THỊ LỖI:
+  // Nếu isError, hiển thị lỗi (đây là lỗi thật, không phải lỗi "Pending")
+  if (isError) return <div className="text-center text-red-600 py-10">Error loading orders. Please refresh the page.</div>;
+  
+  // Chỉ hiển thị Loading khi isLoading và không có lỗi
+  if (isLoading && !isError) return <Loading />; 
+  
 
   const getStatusColor = (status) => {
-    // ... (Giữ nguyên) ...
     const colors = {
       'Pending': 'bg-yellow-100 text-yellow-800',
       'Processing': 'bg-blue-100 text-blue-800', 
@@ -107,7 +113,6 @@ const OrderPage = () => {
   };
 
   return (
-    // --- PHẦN JSX GIỮ NGUYÊN (VẪN ĐÚNG) ---
     <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <h2 className="text-3xl font-heading font-bold text-primary mb-8">Your Orders</h2>
 
