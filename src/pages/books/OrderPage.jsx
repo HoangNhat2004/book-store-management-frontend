@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useGetOrderByEmailQuery } from '../../redux/features/orders/ordersApi';
 import { useAuth } from '../../context/AuthContext';
-import { Link, useLocation } from 'react-router-dom'; // <-- THÊM Link
-import Loading from '../../components/Loading'; // <-- THÊM Loading
+import { Link, useLocation } from 'react-router-dom';
+import Loading from '../../components/Loading';
 
 // Hàm helper để đọc query params
 const useQuery = () => {
@@ -12,69 +12,80 @@ const useQuery = () => {
 
 const OrderPage = () => {
   const { currentUser } = useAuth();
-  // --- (LOGIC CŨ CỦA BẠN - GIỮ NGUYÊN) ---
   const { data: orders = [], isLoading, isError, refetch } = useGetOrderByEmailQuery(currentUser?.email, {
-      skip: !currentUser?.email, // Bỏ qua query nếu chưa có email
+      skip: !currentUser?.email, 
   });
   
   const [paymentStatus, setPaymentStatus] = useState(null);
   const query = useQuery();
 
+  // --- BẮT ĐẦU SỬA LOGIC HIỂN THỊ THÔNG BÁO ---
   useEffect(() => {
     const responseCode = query.get('vnp_ResponseCode');
     
     if (responseCode === '00') {
+        // 1. THANH TOÁN THÀNH CÔNG
         setPaymentStatus({
             type: 'success',
             message: 'Payment completed successfully! Your order is being processed.'
         });
-        refetch();
+        refetch(); // Tải lại đơn hàng để cập nhật trạng thái
+    } else if (responseCode === '24') {
+        // 2. NGƯỜI DÙNG HỦY (Bấm "Quay lại")
+        setPaymentStatus({
+            type: 'info', // Đổi từ 'error' thành 'info'
+            message: 'Payment was cancelled. Your order remains pending.'
+        });
+        refetch(); // Tải lại để hiển thị đơn hàng Pending
     } else if (responseCode && responseCode !== '00') {
+         // 3. THANH TOÁN THẤT BẠI (Lỗi thực sự)
         setPaymentStatus({
             type: 'error',
             message: 'Payment failed. Please try again or select a different payment method.'
         });
+        refetch(); // Tải lại
     }
 
     if (responseCode) {
+        // Xóa query params khỏi URL sau khi đọc
         window.history.replaceState(null, null, window.location.pathname);
     }
-  }, [refetch]); // Thêm refetch vào dependency array
-  // --- (KẾT THÚC LOGIC CŨ) ---
+  }, [refetch, query]); // Thêm 'query' vào dependency array
+  // --- KẾT THÚC SỬA LOGIC ---
 
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
 
-  if (isLoading) return <Loading />; // Dùng component Loading
+  if (isLoading) return <Loading />; 
   if (isError) return <div className="text-center text-red-600 py-10">Error loading orders</div>;
 
-  // Hàm helper để lấy màu status (ĐÃ CẬP NHẬT MÀU)
   const getStatusColor = (status) => {
     const colors = {
       'Pending': 'bg-yellow-100 text-yellow-800',
-      'Processing': 'bg-blue-100 text-blue-800', // (Giữ màu blue cho processing)
+      'Processing': 'bg-blue-100 text-blue-800', 
       'Shipped': 'bg-purple-100 text-purple-800',
       'Delivered': 'bg-green-100 text-green-800',
-      'Cancelled': 'bg-accent-light text-accent' // (Dùng màu accent)
+      'Cancelled': 'bg-accent-light text-accent' 
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
 
   return (
-    // --- BẮT ĐẦU "LỘT XÁC" (RESKIN) JSX ---
     <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <h2 className="text-3xl font-heading font-bold text-primary mb-8">Your Orders</h2>
 
-      {/* --- HIỂN THỊ THÔNG BÁO THANH TOÁN (Giao diện mới) --- */}
+      {/* --- BẮT ĐẦU SỬA KHỐI HIỂN THỊ (THÊM MÀU BLUE CHO 'info') --- */}
       {paymentStatus && (
         <div className={`p-4 rounded-md mb-6 border ${
             paymentStatus.type === 'success' 
             ? 'bg-green-50 border-green-300 text-green-800' 
-            : 'bg-red-50 border-red-300 text-red-800'
+            : paymentStatus.type === 'info'
+            ? 'bg-blue-50 border-blue-300 text-blue-800' // Thêm style cho 'info'
+            : 'bg-red-50 border-red-300 text-red-800'  // Mặc định là 'error'
         }`}>
             <p className="font-semibold">{paymentStatus.message}</p>
         </div>
       )}
-      {/* --- KẾT THÚC THÔNG BÁO --- */}
+      {/* --- KẾT THÚC SỬA KHỐI HIỂN THỊ --- */}
 
 
       {validOrders.length === 0 ? (
@@ -119,7 +130,6 @@ const OrderPage = () => {
                   <div>
                     <p><strong>Address:</strong></p>
                     <p className="text-gray-600">
-                    {/* (Đảm bảo có order.address.address) */}
                     {order.address?.address}, {order.address?.city}, {order.address?.state}, {order.address?.country} {order.address?.zipcode && `- ${order.address.zipcode}`}
                   </p>
                   </div>
@@ -129,7 +139,6 @@ const OrderPage = () => {
               <div className="border-t border-subtle pt-4">
                 <h4 className="font-heading text-md font-semibold text-ink mb-3">Items Ordered:</h4>
                 <div className="space-y-3">
-                  {/* (Đã sửa lại để đọc từ order.items) */}
                   {order.items?.map((item, i) => (
                     <div key={item.productId || i} className="flex justify-between items-center bg-paper p-3 rounded-md">
                         <div>
@@ -148,7 +157,6 @@ const OrderPage = () => {
         </div>
       )}
     </div>
-    // --- KẾT THÚC "LỘT XÁC" JSX ---
   );
 };
 
