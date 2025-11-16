@@ -92,6 +92,9 @@ const ManageBooks = () => {
                                         Price
                                     </th>
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                        Sold
+                                    </th>
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Actions
                                     </th>
                                 </tr>
@@ -112,6 +115,10 @@ const ManageBooks = () => {
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                                                 ${book.newPrice}
+                                            </td>
+                                            <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                                {/* Hiển thị số lượng đã bán, mặc định là 0 */}
+                                                {book.totalSold || 0}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 space-x-4">
                                                 {/* Sửa màu nút */}
