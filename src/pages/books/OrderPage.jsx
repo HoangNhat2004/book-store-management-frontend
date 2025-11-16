@@ -1,6 +1,7 @@
-// src/pages/books/OrderPage.jsx
+// hoangnhat2004/book-store-management-frontend/book-store-management-frontend-192ec3eed487c193b211e0c30f535a79e0e97a86/src/pages/books/OrderPage.jsx
 import React, { useEffect, useState } from 'react';
-import { useGetOrderByEmailQuery } from '../../redux/features/orders/ordersApi';
+// --- 1. IMPORT HOOK MỚI ---
+import { useGetOrderByEmailQuery, useConfirmPaymentMutation } from '../../redux/features/orders/ordersApi';
 import { useAuth } from '../../context/AuthContext';
 import { Link, useLocation } from 'react-router-dom';
 import Loading from '../../components/Loading';
@@ -16,79 +17,76 @@ const OrderPage = () => {
       skip: !currentUser?.email, 
   });
   
+  // --- 2. GỌI HOOK MỚI ---
+  const [confirmPayment] = useConfirmPaymentMutation();
+  
   const [paymentStatus, setPaymentStatus] = useState(null);
   const query = useQuery();
 
-  // --- BẮT ĐẦU SỬA LỖI RACE CONDITION ---
+  // --- 3. SỬA LẠI HOÀN TOÀN useEffect ---
   useEffect(() => {
     const responseCode = query.get('vnp_ResponseCode');
     const orderIdFromVNPay = query.get('vnp_TxnRef'); // Lấy ID đơn hàng từ VNPay
 
-    // 1. Xóa query params khỏi URL ngay lập tức
+    // Xóa query params khỏi URL ngay lập tức
     if (responseCode) {
         window.history.replaceState(null, null, window.location.pathname);
     }
 
-    // 2. Xử lý logic thanh toán
-    if (responseCode === '00' && orderIdFromVNPay) {
-        // A. Thanh toán thành công (Báo đang xác nhận)
-        setPaymentStatus({
-            type: 'success',
-            message: 'Payment successful! Confirming order status, please wait...'
-        });
-
-        // B. Bắt đầu Polling (Hỏi lại)
-        let attempts = 0;
-        const maxAttempts = 5; // Thử 5 lần
-        const interval = 2000; // 2 giây 1 lần (tổng 10 giây)
-
-        const poll = async () => {
-            attempts++;
+    // Tạo một hàm async bên trong để xử lý
+    const handlePaymentResult = async (code, orderId) => {
+        if (code === '00' && orderId) {
+            // 1. THANH TOÁN THÀNH CÔNG
+            setPaymentStatus({
+                type: 'success',
+                message: 'Payment successful! Confirming order status, please wait...'
+            });
             
-            // Gọi refetch để lấy dữ liệu mới nhất
-            const { data: latestOrders } = await refetch();
-            
-            // Tìm chính xác đơn hàng vừa thanh toán
-            const paidOrder = latestOrders?.find(o => o._id === orderIdFromVNPay);
-
-            if (paidOrder && paidOrder.status === 'Processing') {
-                // ĐÃ CẬP NHẬT! Dừng polling.
+            try {
+                // 2. GỌI API MỚI để báo backend cập nhật
+                await confirmPayment(orderId).unwrap();
+                
+                // 3. Báo thành công hoàn tất
                 setPaymentStatus({
                     type: 'success',
                     message: 'Payment completed successfully! Your order is being processed.'
                 });
-            } else if (attempts < maxAttempts) {
-                // Vẫn là Pending, thử lại sau 2 giây
-                setTimeout(poll, interval);
-            } else {
-                // Hết 10 giây vẫn Pending (có thể do IPN bị chậm)
-                console.warn("Polling timed out. Order status is still Pending.");
+                
+                // 4. Tải lại dữ liệu (bây giờ sẽ là "Processing")
+                refetch();
+
+            } catch (error) {
+                console.error("Failed to confirm payment:", error);
                 setPaymentStatus({
-                    type: 'success',
-                    message: 'Payment completed! Your order status will update shortly.'
+                    type: 'error',
+                    message: 'Payment was successful, but failed to update status. Please contact support.'
                 });
             }
-        };
-        
-        poll(); // Bắt đầu polling
 
-    } else if (responseCode === '24') {
-        // C. Người dùng hủy
-        setPaymentStatus({
-            type: 'info',
-            message: 'Payment was cancelled. Your order remains pending.'
-        });
-        refetch(); // Tải lại 1 lần là đủ
-    } else if (responseCode) {
-        // D. Lỗi
-        setPaymentStatus({
-            type: 'error',
-            message: 'Payment failed. Please try again or select a different payment method.'
-        });
-        refetch(); // Tải lại 1 lần là đủ
+        } else if (code === '24') {
+            // 2. NGƯỜI DÙNG HỦY
+            setPaymentStatus({
+                type: 'info',
+                message: 'Payment was cancelled. Your order remains pending.'
+            });
+            refetch(); 
+        } else if (code) {
+            // 3. LỖI KHÁC
+            setPaymentStatus({
+                type: 'error',
+                message: 'Payment failed. Please try again or select a different payment method.'
+            });
+            refetch(); 
+        }
+    };
+
+    // Chỉ chạy logic nếu có responseCode
+    if (responseCode) {
+      handlePaymentResult(responseCode, orderIdFromVNPay);
     }
-  }, [refetch, query]); // Giữ dependencies
-  // --- KẾT THÚC SỬA LỖI ---
+
+  }, [refetch, query, confirmPayment]); // Thêm confirmPayment vào dependencies
+  // --- KẾT THÚC SỬA ---
 
 
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
@@ -97,6 +95,7 @@ const OrderPage = () => {
   if (isError) return <div className="text-center text-red-600 py-10">Error loading orders</div>;
 
   const getStatusColor = (status) => {
+    // ... (Giữ nguyên) ...
     const colors = {
       'Pending': 'bg-yellow-100 text-yellow-800',
       'Processing': 'bg-blue-100 text-blue-800', 
@@ -108,6 +107,7 @@ const OrderPage = () => {
   };
 
   return (
+    // --- PHẦN JSX GIỮ NGUYÊN (VẪN ĐÚNG) ---
     <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <h2 className="text-3xl font-heading font-bold text-primary mb-8">Your Orders</h2>
 

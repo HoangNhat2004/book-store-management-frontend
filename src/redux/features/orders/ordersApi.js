@@ -1,4 +1,4 @@
-// src/redux/features/orders/ordersApi.js
+// hoangnhat2004/book-store-management-frontend/book-store-management-frontend-192ec3eed487c193b211e0c30f535a79e0e97a86/src/redux/features/orders/ordersApi.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import getBaseUrl from "../../../utils/baseURL";
 import { auth } from "../../../firebase/firebase.config"; 
@@ -6,6 +6,7 @@ import { auth } from "../../../firebase/firebase.config";
 const ordersApi = createApi({
   reducerPath: 'ordersApi',
   baseQuery: fetchBaseQuery({
+    // ... (Phần baseQuery giữ nguyên) ...
     baseUrl: getBaseUrl(),
     prepareHeaders: async (headers, { getState, endpoint }) => {
         
@@ -34,6 +35,7 @@ const ordersApi = createApi({
   endpoints: (builder) => ({
     // 1. Tạo đơn hàng
     createOrder: builder.mutation({
+      // ... (Giữ nguyên) ...
       query: (newOrder) => ({
         url: "/api/orders",
         method: "POST",
@@ -44,15 +46,27 @@ const ordersApi = createApi({
 
     // 2. Lấy đơn theo email (user)
     getOrderByEmail: builder.query({
+      // ... (Giữ nguyên) ...
       query: (email) => `/api/orders/email/${email}`,
       providesTags: ['Orders'],
     }),
 
-    // 3. LẤY TẤT CẢ ĐƠN HÀNG (ADMIN) ← MỚI
+    // 3. LẤY TẤT CẢ ĐƠN HÀNG (ADMIN)
     getOrders: builder.query({
+      // ... (Giữ nguyên) ...
       query: () => "/api/orders",
       providesTags: ['Orders'],
     }),
+
+    // --- 4. THÊM MUTATION MỚI ---
+    confirmPayment: builder.mutation({
+      query: (orderId) => ({
+        url: `/api/orders/${orderId}/confirm-payment`,
+        method: "POST",
+      }),
+      invalidatesTags: ['Orders'], // Cập nhật lại danh sách Orders
+    }),
+    // --- KẾT THÚC THÊM ---
   }),
 });
 
@@ -60,7 +74,8 @@ const ordersApi = createApi({
 export const { 
   useCreateOrderMutation, 
   useGetOrderByEmailQuery, 
-  useGetOrdersQuery   // ← MỚI
+  useGetOrdersQuery,
+  useConfirmPaymentMutation // <-- Xuất hook mới
 } = ordersApi;
 
 export default ordersApi;
