@@ -62,12 +62,16 @@ const DashboardLayout = () => {
           </Link>
         </nav>
         
+        {/* --- BẮT ĐẦU SỬA: XÓA "VIEW USER SITE" --- */}
+        {/*
         <div className="p-4 border-t border-paper/10">
             <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-paper/10 rounded-lg">
                 <HiMiniCog6Tooth className="h-6 w-6"/>
                 <span className="font-medium">View User Site</span>
             </a>
         </div>
+        */}
+        {/* --- KẾT THÚC SỬA --- */}
       </div>
     </aside>
 
