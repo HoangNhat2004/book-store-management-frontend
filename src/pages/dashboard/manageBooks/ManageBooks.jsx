@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react' // Thêm useState, useEffect
+import React, { useState, useEffect } from 'react'
 import { useDeleteBookMutation, useFetchAllBooksQuery } from '../../../redux/features/books/booksApi';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; // Thêm useLocation
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 
 // Hàm helper để đọc query params
@@ -45,14 +45,14 @@ const ManageBooks = () => {
     
     const filteredBooks = books
         ? books.filter(book =>
-            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            book.category.toLowerCase().includes(searchQuery.toLowerCase())
+            (book.title && book.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (book.category && book.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
+            (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase())) // <-- Thêm tìm kiếm theo tác giả
         )
         : [];
     // --- (KẾT THÚC LOGIC) ---
 
     return (
-        // --- SỬA GIAO DIỆN ---
         <section className="py-1 bg-paper">
             <div className="w-full mb-12 xl:mb-0 px-4 mx-auto">
                 <div className="relative flex flex-col min-w-0 break-words bg-white w-full mb-6 shadow-sm border border-subtle rounded-lg ">
@@ -62,10 +62,9 @@ const ManageBooks = () => {
                                 <h3 className="font-heading font-semibold text-base text-ink">All Books</h3>
                             </div>
                             <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
-                                {/* Sửa ô Search */}
                                 <input
                                     type="text"
-                                    placeholder="Search by title or category..."
+                                    placeholder="Search by title, category, or author..." // <-- Cập nhật placeholder
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="border border-subtle rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
@@ -78,13 +77,17 @@ const ManageBooks = () => {
                         <table className="items-center bg-transparent w-full border-collapse ">
                             <thead>
                                 <tr>
-                                    {/* Sửa Header Bảng */}
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         #
                                     </th>
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Book Title
                                     </th>
+                                    {/* --- 1. THÊM CỘT MỚI: AUTHOR (HEADER) --- */}
+                                    <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
+                                        Author
+                                    </th>
+                                    {/* --- KẾT THÚC THÊM --- */}
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Category
                                     </th>
@@ -110,6 +113,11 @@ const ManageBooks = () => {
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 font-medium">
                                                 {book.title}
                                             </td>
+                                            {/* --- 2. THÊM CỘT MỚI: AUTHOR (DATA) --- */}
+                                            <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                                {book.author || 'N/A'}
+                                            </td>
+                                            {/* --- KẾT THÚC THÊM --- */}
                                             <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4 capitalize">
                                                 {book.category}
                                             </td>
@@ -117,11 +125,9 @@ const ManageBooks = () => {
                                                 ${book.newPrice}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                                {/* Hiển thị số lượng đã bán, mặc định là 0 */}
                                                 {book.totalSold || 0}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 space-x-4">
-                                                {/* Sửa màu nút */}
                                                 <Link to={`/dashboard/edit-book/${book._id}`} className="font-medium text-primary hover:text-opacity-80">
                                                     Edit
                                                 </Link>
@@ -140,7 +146,6 @@ const ManageBooks = () => {
                 </div>
             </div>
         </section>
-        // --- KẾT THÚC SỬA GIAO DIỆN ---
     )
 }
 
