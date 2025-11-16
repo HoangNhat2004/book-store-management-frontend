@@ -52,6 +52,12 @@ const AddBook = () => {
           register={register}
         />
         <InputField
+          label="Author"
+          name="author"
+          placeholder="Enter author's name"
+          register={register}
+        />
+        <InputField
           label="Description"
           name="description"
           placeholder="Enter book description"

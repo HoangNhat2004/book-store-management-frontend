@@ -18,6 +18,7 @@ const UpdateBook = () => {
   useEffect(() => {
     if (bookData) {
       setValue('title', bookData.title);
+      setValue('author', bookData.author);
       setValue('description', bookData.description);
       setValue('category', bookData?.category);
       setValue('trending', bookData.trending);
@@ -30,6 +31,7 @@ const UpdateBook = () => {
   const onSubmit = async (data) => {
     const updateBookData = {
       title: data.title,
+      author: data.author,
       description: data.description,
       category: data.category,
       trending: data.trending,
@@ -66,6 +68,12 @@ const UpdateBook = () => {
           label="Title"
           name="title"
           placeholder="Enter book title"
+          register={register}
+        />
+        <InputField
+          label="Author"
+          name="author"
+          placeholder="Enter author's name"
           register={register}
         />
         <InputField
