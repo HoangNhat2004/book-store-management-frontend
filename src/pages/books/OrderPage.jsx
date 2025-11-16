@@ -19,39 +19,77 @@ const OrderPage = () => {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const query = useQuery();
 
-  // --- BẮT ĐẦU SỬA LOGIC HIỂN THỊ THÔNG BÁO ---
+  // --- BẮT ĐẦU SỬA LỖI RACE CONDITION ---
   useEffect(() => {
     const responseCode = query.get('vnp_ResponseCode');
-    
-    if (responseCode === '00') {
-        // 1. THANH TOÁN THÀNH CÔNG
+    const orderIdFromVNPay = query.get('vnp_TxnRef'); // Lấy ID đơn hàng từ VNPay
+
+    // 1. Xóa query params khỏi URL ngay lập tức
+    if (responseCode) {
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    // 2. Xử lý logic thanh toán
+    if (responseCode === '00' && orderIdFromVNPay) {
+        // A. Thanh toán thành công (Báo đang xác nhận)
         setPaymentStatus({
             type: 'success',
-            message: 'Payment completed successfully! Your order is being processed.'
+            message: 'Payment successful! Confirming order status, please wait...'
         });
-        refetch(); // Tải lại đơn hàng để cập nhật trạng thái
+
+        // B. Bắt đầu Polling (Hỏi lại)
+        let attempts = 0;
+        const maxAttempts = 5; // Thử 5 lần
+        const interval = 2000; // 2 giây 1 lần (tổng 10 giây)
+
+        const poll = async () => {
+            attempts++;
+            
+            // Gọi refetch để lấy dữ liệu mới nhất
+            const { data: latestOrders } = await refetch();
+            
+            // Tìm chính xác đơn hàng vừa thanh toán
+            const paidOrder = latestOrders?.find(o => o._id === orderIdFromVNPay);
+
+            if (paidOrder && paidOrder.status === 'Processing') {
+                // ĐÃ CẬP NHẬT! Dừng polling.
+                setPaymentStatus({
+                    type: 'success',
+                    message: 'Payment completed successfully! Your order is being processed.'
+                });
+            } else if (attempts < maxAttempts) {
+                // Vẫn là Pending, thử lại sau 2 giây
+                setTimeout(poll, interval);
+            } else {
+                // Hết 10 giây vẫn Pending (có thể do IPN bị chậm)
+                console.warn("Polling timed out. Order status is still Pending.");
+                setPaymentStatus({
+                    type: 'success',
+                    message: 'Payment completed! Your order status will update shortly.'
+                });
+            }
+        };
+        
+        poll(); // Bắt đầu polling
+
     } else if (responseCode === '24') {
-        // 2. NGƯỜI DÙNG HỦY (Bấm "Quay lại")
+        // C. Người dùng hủy
         setPaymentStatus({
-            type: 'info', // Đổi từ 'error' thành 'info'
+            type: 'info',
             message: 'Payment was cancelled. Your order remains pending.'
         });
-        refetch(); // Tải lại để hiển thị đơn hàng Pending
-    } else if (responseCode && responseCode !== '00') {
-         // 3. THANH TOÁN THẤT BẠI (Lỗi thực sự)
+        refetch(); // Tải lại 1 lần là đủ
+    } else if (responseCode) {
+        // D. Lỗi
         setPaymentStatus({
             type: 'error',
             message: 'Payment failed. Please try again or select a different payment method.'
         });
-        refetch(); // Tải lại
+        refetch(); // Tải lại 1 lần là đủ
     }
+  }, [refetch, query]); // Giữ dependencies
+  // --- KẾT THÚC SỬA LỖI ---
 
-    if (responseCode) {
-        // Xóa query params khỏi URL sau khi đọc
-        window.history.replaceState(null, null, window.location.pathname);
-    }
-  }, [refetch, query]); // Thêm 'query' vào dependency array
-  // --- KẾT THÚC SỬA LOGIC ---
 
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
 
@@ -73,19 +111,17 @@ const OrderPage = () => {
     <div className="container mx-auto p-4 md:p-6 max-w-4xl">
       <h2 className="text-3xl font-heading font-bold text-primary mb-8">Your Orders</h2>
 
-      {/* --- BẮT ĐẦU SỬA KHỐI HIỂN THỊ (THÊM MÀU BLUE CHO 'info') --- */}
       {paymentStatus && (
         <div className={`p-4 rounded-md mb-6 border ${
             paymentStatus.type === 'success' 
             ? 'bg-green-50 border-green-300 text-green-800' 
             : paymentStatus.type === 'info'
-            ? 'bg-blue-50 border-blue-300 text-blue-800' // Thêm style cho 'info'
-            : 'bg-red-50 border-red-300 text-red-800'  // Mặc định là 'error'
+            ? 'bg-blue-50 border-blue-300 text-blue-800' 
+            : 'bg-red-50 border-red-300 text-red-800'
         }`}>
             <p className="font-semibold">{paymentStatus.message}</p>
         </div>
       )}
-      {/* --- KẾT THÚC SỬA KHỐI HIỂN THỊ --- */}
 
 
       {validOrders.length === 0 ? (
