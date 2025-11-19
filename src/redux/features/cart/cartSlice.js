@@ -1,10 +1,37 @@
 import { createSlice } from "@reduxjs/toolkit";
 import Swal from "sweetalert2";
 
-// === THÊM: Hàm helper để lấy data từ localStorage ===
+// === HÀM LẤY USER KEY (email hoặc username) ===
+const getUserKey = () => {
+    try {
+        // 1. Thử lấy từ JWT user (username/password login)
+        const user = localStorage.getItem('user');
+        if (user) {
+            const parsedUser = JSON.parse(user);
+            return parsedUser.email || parsedUser.username || null;
+        }
+        
+        // 2. Thử lấy từ Firebase user (Google login)
+        const firebaseUser = localStorage.getItem('firebaseUser');
+        if (firebaseUser) {
+            const parsedFirebase = JSON.parse(firebaseUser);
+            return parsedFirebase.email || null;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error("Error getting user key:", error);
+        return null;
+    }
+};
+
+// === HÀM LẤY CART THEO USER ===
 const getCartFromStorage = () => {
     try {
-        const cart = localStorage.getItem('cart');
+        const userKey = getUserKey();
+        if (!userKey) return []; // Chưa đăng nhập → cart rỗng
+        
+        const cart = localStorage.getItem(`cart_${userKey}`);
         return cart ? JSON.parse(cart) : [];
     } catch (error) {
         console.error("Failed to parse cart from localStorage", error);
@@ -12,18 +39,24 @@ const getCartFromStorage = () => {
     }
 };
 
-// === THÊM: Hàm helper để lưu data vào localStorage ===
+// === HÀM LƯU CART THEO USER ===
 const saveCartToStorage = (cart) => {
     try {
-        localStorage.setItem('cart', JSON.stringify(cart));
+        const userKey = getUserKey();
+        if (!userKey) {
+            console.warn("No user logged in, cart not saved");
+            return;
+        }
+        
+        localStorage.setItem(`cart_${userKey}`, JSON.stringify(cart));
     } catch (error) {
         console.error("Failed to save cart to localStorage", error);
     }
 };
 
-// === SỬA: initialState bây giờ lấy từ localStorage ===
+// === INITIAL STATE ===
 const initialState = {
-    cartItems: getCartFromStorage(), // <-- ĐÃ SỬA
+    cartItems: getCartFromStorage(),
 }
 
 const cartSlice = createSlice({
