@@ -70,37 +70,29 @@ export const AuthProvide = ({children}) => {
     }
 
     const logout = () => {
-        // === 5. LẤY USER KEY TRƯỚC KHI XÓA ===
-        const getUserKey = () => {
-            try {
-                const user = localStorage.getItem('user');
-                if (user) {
-                    const parsedUser = JSON.parse(user);
-                    return parsedUser.email || parsedUser.username || null;
-                }
-                return null;
-            } catch {
-                return null;
-            }
-        };
-        
+        // --- BỎ ĐOẠN CODE LẤY USER KEY VÀ XÓA CART CŨ ---
+        // (Xóa hoặc comment lại đoạn dưới đây)
+        /*
+        const getUserKey = () => { ... };
         const userKey = getUserKey();
-        
-        // === 6. XÓA CART CỦA USER KHỎI LOCALSTORAGE ===
         if (userKey) {
-            localStorage.removeItem(`cart_${userKey}`);
+            localStorage.removeItem(`cart_${userKey}`); 
         }
+        */
         
-        // === 7. CLEAR CART TRONG REDUX ===
-        dispatch(clearCart());
-        
-        // === 8. XÓA TOKEN VÀ USER ===
+        // --- 1. XÓA TOKEN VÀ USER TRƯỚC ---
+        // Việc này ngắt kết nối user hiện tại, bảo vệ dữ liệu giỏ hàng của họ không bị ghi đè
         localStorage.removeItem('userToken'); 
         localStorage.removeItem('user');
-        localStorage.removeItem('firebaseUser');
+        localStorage.removeItem('firebaseUser'); // Xóa thêm cái này nếu bạn đã thêm ở bước trước
+        
+        // --- 2. SAU ĐÓ MỚI CLEAR CART TRONG REDUX ---
+        // Lúc này hệ thống không còn biết user là ai, nên cart rỗng sẽ không lưu vào hồ sơ user cũ
+        dispatch(clearCart());
+        
         setCurrentUser(null); 
         
-        return signOut(auth); 
+        return signOut(auth);
     }
 
     useEffect(() => {
