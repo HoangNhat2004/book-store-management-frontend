@@ -67,17 +67,13 @@ const cartSlice = createSlice({
             const existingItem = state.cartItems.find(item => item._id === action.payload._id);
             
             if (!existingItem) {
-                // Nếu chưa có, thêm mới với số lượng là 1
                 state.cartItems.push({ ...action.payload, quantity: 1 })
             } else {
-                // Nếu đã có, chỉ tăng số lượng lên 1
                 existingItem.quantity += 1;
             }
 
-            // === THÊM: Lưu vào localStorage sau khi thêm ===
             saveCartToStorage(state.cartItems);
 
-            // Luôn luôn hiển thị thông báo thành công
             Swal.fire({
                 position: "top-end",
                 icon: "success",
@@ -88,12 +84,10 @@ const cartSlice = createSlice({
         },
         removeFromCart: (state, action) => {
             state.cartItems = state.cartItems.filter(item => item._id !== action.payload._id);
-            // === THÊM: Lưu vào localStorage sau khi xóa ===
             saveCartToStorage(state.cartItems);
         },
         clearCart: (state) => {
             state.cartItems = [];
-            // === THÊM: Xóa localStorage sau khi clear ===
             saveCartToStorage(state.cartItems);
         },
         updateQuantity: (state, action) => {
@@ -102,11 +96,14 @@ const cartSlice = createSlice({
             if (item && quantity > 0) {
                 item.quantity = quantity;
             }
-            // === THÊM: Lưu vào localStorage sau khi update ===
             saveCartToStorage(state.cartItems);
+        },
+        // === ACTION MỚI: LOAD CART KHI LOGIN ===
+        loadCartFromStorage: (state) => {
+            state.cartItems = getCartFromStorage();
         }
     }
 })
 
-export const { addToCart, removeFromCart, clearCart, updateQuantity } = cartSlice.actions;
+export const { addToCart, removeFromCart, clearCart, updateQuantity, loadCartFromStorage } = cartSlice.actions;
 export default cartSlice.reducer;
