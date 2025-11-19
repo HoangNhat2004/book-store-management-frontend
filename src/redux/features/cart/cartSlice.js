@@ -4,24 +4,22 @@ import Swal from "sweetalert2";
 // === HÀM LẤY USER KEY (email hoặc username) ===
 const getUserKey = () => {
     try {
-        // 1. Thử lấy từ JWT user (username/password login)
         const user = localStorage.getItem('user');
         if (user) {
             const parsedUser = JSON.parse(user);
-            return parsedUser.email || parsedUser.username || null;
+            return parsedUser.email || parsedUser.username || "guest"; // Fallback về guest nếu lỗi
         }
         
-        // 2. Thử lấy từ Firebase user (Google login)
         const firebaseUser = localStorage.getItem('firebaseUser');
         if (firebaseUser) {
             const parsedFirebase = JSON.parse(firebaseUser);
-            return parsedFirebase.email || null;
+            return parsedFirebase.email || "guest"; // Fallback về guest nếu lỗi
         }
         
-        return null;
+        return "guest"; // <-- QUAN TRỌNG: Trả về "guest" thay vì null
     } catch (error) {
         console.error("Error getting user key:", error);
-        return null;
+        return "guest"; // <-- Luôn trả về "guest" khi có lỗi
     }
 };
 
@@ -29,7 +27,7 @@ const getUserKey = () => {
 const getCartFromStorage = () => {
     try {
         const userKey = getUserKey();
-        if (!userKey) return []; // Chưa đăng nhập → cart rỗng
+        // Đã xóa dòng kiểm tra (!userKey) vì giờ nó luôn có giá trị
         
         const cart = localStorage.getItem(`cart_${userKey}`);
         return cart ? JSON.parse(cart) : [];
@@ -43,10 +41,7 @@ const getCartFromStorage = () => {
 const saveCartToStorage = (cart) => {
     try {
         const userKey = getUserKey();
-        if (!userKey) {
-            console.warn("No user logged in, cart not saved");
-            return;
-        }
+        // Đã xóa dòng kiểm tra (!userKey) và console.warn
         
         localStorage.setItem(`cart_${userKey}`, JSON.stringify(cart));
     } catch (error) {
