@@ -97,6 +97,7 @@ export const AuthProvide = ({children}) => {
         // === 8. XÓA TOKEN VÀ USER ===
         localStorage.removeItem('userToken'); 
         localStorage.removeItem('user');
+        localStorage.removeItem('firebaseUser');
         setCurrentUser(null); 
         
         return signOut(auth); 
@@ -111,28 +112,39 @@ export const AuthProvide = ({children}) => {
             if(user) {
                 setCurrentUser(user);
                 setLoading(false);
+                const { email, displayName, photoURL } = user;
+                const userData = { 
+                    email, 
+                    username: displayName, 
+                    photoURL 
+                };
+                localStorage.setItem('firebaseUser', JSON.stringify(userData));
                 
                 // === 9. LOAD CART KHI GOOGLE USER LOGIN ===
                 dispatch(loadCartFromStorage());
                 
-                const {email, displayName, photoURL} = user;
+                const {email: userEmail, displayName: userName, photoURL: userPhoto} = user; // Đổi tên biến tránh trùng
                 axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
-                    email,
-                    username: displayName,
-                    photoURL
+                    email: userEmail,
+                    username: userName,
+                    photoURL: userPhoto
                 }).catch(err => {
                     console.error("Failed to sync Google user profile to backend:", err);
                 });
             } else {
+                // Khi không có user (hoặc vừa logout xong)
                 const token = localStorage.getItem('userToken');
                 const storedUser = localStorage.getItem('user');
                 
+                if (!token || !storedUser) {
+                    // Đảm bảo xóa key rác nếu không còn token hợp lệ
+                    localStorage.removeItem('firebaseUser');
+                }
+
                 if (token && storedUser) {
                     try {
                        const parsedUser = JSON.parse(storedUser);
                        setCurrentUser(parsedUser);
-                       
-                       // === 10. LOAD CART KHI JWT USER LOGIN ===
                        dispatch(loadCartFromStorage());
                     } catch (e) {
                        console.error("Failed to parse stored user", e);
