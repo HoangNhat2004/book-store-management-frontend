@@ -25,6 +25,7 @@ const UpdateBook = () => {
       setValue('oldPrice', bookData.oldPrice);
       setValue('newPrice', bookData.newPrice);
       setValue('coverImage', bookData.coverImage)
+      setValue('stock', bookData.stock)
     }
   }, [bookData, setValue])
 
@@ -120,6 +121,13 @@ const UpdateBook = () => {
             type="number"
             placeholder="New Price"
             register={register}
+            />
+            <InputField
+                label="Stock (Inventory)"
+                name="stock"
+                type="number"
+                placeholder="Quantity in stock"
+                register={register}
             />
         </div>
         {/* Sửa lại Input này (Vì bạn bỏ qua lỗi ảnh, nên ta giữ logic nhập tên tệp) */}

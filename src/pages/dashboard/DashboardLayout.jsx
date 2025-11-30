@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react' 
+import React, { useState, useEffect } from 'react' 
 
 import Loading from '../../components/Loading';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
@@ -7,12 +7,28 @@ import { HiViewGridAdd } from "react-icons/hi";
 import { MdOutlineManageHistory } from "react-icons/md";
 // 1. IMPORT CÁC ICON MỚI
 import { HiMiniChartBar, HiMiniFolder, HiMiniCog6Tooth, HiMiniArrowLeftOnRectangle } from "react-icons/hi2";
-import { IoSearchOutline } from "react-icons/io5"; // <-- 2. THÊM DÒNG NÀY ĐỂ SỬA LỖI
+import { IoSearchOutline } from "react-icons/io5"; 
 
 const DashboardLayout = () => {
   
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("");
+  
+  // --- 1. LẤY ROLE NGƯỜI DÙNG TỪ LOCALSTORAGE ---
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('adminUser');
+    if (storedUser) {
+        try {
+            const parsedUser = JSON.parse(storedUser);
+            setUserRole(parsedUser.role);
+        } catch (error) {
+            console.error("Error parsing adminUser:", error);
+        }
+    }
+  }, []);
+  // ----------------------------------------------
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -41,18 +57,28 @@ const DashboardLayout = () => {
       <div className="flex-grow flex flex-col justify-between">
         <nav className="flex flex-col p-4 space-y-2">
           
+          {/* HIỂN THỊ CHO CẢ ADMIN VÀ EMPLOYEE */}
           <Link to="/dashboard" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-paper/10 rounded-lg">
             <HiMiniChartBar className="h-6 w-6"/>
             <span className="font-medium">Dashboard</span>
           </Link>
-          <Link to="/dashboard/add-new-book" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-paper/10 rounded-lg">
-            <HiViewGridAdd className="h-6 w-6"/>
-            <span className="font-medium">Add Book</span>
-          </Link>
-          <Link to="/dashboard/manage-books" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-paper/10 rounded-lg">
-            <MdOutlineManageHistory className="h-6 w-6"/>
-            <span className="font-medium">Manage Books</span>
-          </Link>
+
+          {/* --- CHỈ HIỂN THỊ CHO ADMIN --- */}
+          {userRole === 'admin' && (
+            <>
+                <Link to="/dashboard/add-new-book" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-paper/10 rounded-lg">
+                    <HiViewGridAdd className="h-6 w-6"/>
+                    <span className="font-medium">Add Book</span>
+                </Link>
+                <Link to="/dashboard/manage-books" className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-paper/10 rounded-lg">
+                    <MdOutlineManageHistory className="h-6 w-6"/>
+                    <span className="font-medium">Manage Books</span>
+                </Link>
+            </>
+          )}
+          {/* ------------------------------- */}
+
+          {/* HIỂN THỊ CHO CẢ ADMIN VÀ EMPLOYEE */}
           <Link 
             to="/dashboard/orders" 
             className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-paper/10 rounded-lg"
@@ -61,17 +87,6 @@ const DashboardLayout = () => {
             <span className="font-medium">Manage Orders</span>
           </Link>
         </nav>
-        
-        {/* --- BẮT ĐẦU SỬA: XÓA "VIEW USER SITE" --- */}
-        {/*
-        <div className="p-4 border-t border-paper/10">
-            <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-paper/10 rounded-lg">
-                <HiMiniCog6Tooth className="h-6 w-6"/>
-                <span className="font-medium">View User Site</span>
-            </a>
-        </div>
-        */}
-        {/* --- KẾT THÚC SỬA --- */}
       </div>
     </aside>
 
@@ -82,7 +97,6 @@ const DashboardLayout = () => {
       <header className="flex items-center h-20 px-6 sm:px-10 bg-white border-b border-subtle">
         <form onSubmit={handleSearch} className="relative w-full max-w-md">
           <button type="submit" className="absolute h-6 w-6 top-3 left-3 text-gray-400 focus:outline-none">
-            {/* 3. Giờ icon này đã hợp lệ */}
             <IoSearchOutline className="h-5 w-5"/> 
           </button>
           <input 
@@ -123,20 +137,24 @@ const DashboardLayout = () => {
             <h1 className="text-4xl font-heading font-bold mb-2 text-primary">Dashboard</h1>
             <h2 className="text-gray-500 ml-0.5">Book Store Inventory (SOA-132)</h2>
           </div>
-          <div className="flex flex-col md:flex-row items-start justify-end -mb-3">
-            <Link to="/dashboard/manage-books" className="inline-flex px-5 py-3 text-primary hover:text-primary-dark focus:text-primary-dark hover:bg-primary/10 focus:bg-primary/10 border border-primary rounded-md mb-3 transition-colors">
-              <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="flex-shrink-0 h-5 w-5 -ml-1 mt-0.5 mr-2">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              Manage Books
-            </Link>
-            <Link to="/dashboard/add-new-book" className="inline-flex px-5 py-3 text-white bg-primary hover:bg-opacity-90 focus:bg-opacity-90 rounded-md ml-0 md:ml-6 mb-3 transition-colors shadow-sm">
-              <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="flex-shrink-0 h-6 w-6 text-white -ml-1 mr-2">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              Add New Book
-            </Link>
-          </div>
+          
+          {/* CÁC NÚT TẮT CHỈ DÀNH CHO ADMIN */}
+          {userRole === 'admin' && (
+            <div className="flex flex-col md:flex-row items-start justify-end -mb-3">
+                <Link to="/dashboard/manage-books" className="inline-flex px-5 py-3 text-primary hover:text-primary-dark focus:text-primary-dark hover:bg-primary/10 focus:bg-primary/10 border border-primary rounded-md mb-3 transition-colors">
+                <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="flex-shrink-0 h-5 w-5 -ml-1 mt-0.5 mr-2">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+                Manage Books
+                </Link>
+                <Link to="/dashboard/add-new-book" className="inline-flex px-5 py-3 text-white bg-primary hover:bg-opacity-90 focus:bg-opacity-90 rounded-md ml-0 md:ml-6 mb-3 transition-colors shadow-sm">
+                <svg aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="flex-shrink-0 h-6 w-6 text-white -ml-1 mr-2">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add New Book
+                </Link>
+            </div>
+          )}
         </div>
 
        <Outlet/>

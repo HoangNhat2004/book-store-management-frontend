@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-// --- SỬA LỖI 1: IMPORT DÙNG CHO cartItems ---
 import { useDispatch, useSelector } from 'react-redux';
-// --- KẾT THÚC SỬA ---
 import { useForm } from "react-hook-form"
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -12,24 +10,17 @@ import axios from 'axios';
 import getBaseUrl from '../../utils/baseURL';
 import Loading from '../../components/Loading';
 
-// --- SỬA LỖI 2: XÓA TOKEN BỊ LỘ ---
-// const GHN_API_URL = "https://dev-online-gateway.ghn.vn/shiip/public-api"; // XÓA
-// const GHN_TOKEN = import.meta.env.VITE_GHN_TOKEN; // XÓA
-// --- KẾT THÚC SỬA ---
-
 // Tỷ giá (chỉ để hiển thị cho frontend)
 const EXCHANGE_RATE_USD_TO_VND = 25000;
 
 const CheckoutPage = () => {
-    // --- SỬA LỖI 3: THÊM LẠI DÒNG BỊ THIẾU ---
     const cartItems = useSelector(state => state.cart.cartItems);
-    // --- KẾT THÚC SỬA ---
-
     const { currentUser } = useAuth()
     const {
         register,
         handleSubmit,
-        watch, 
+        watch,
+        setValue, // Import thêm setValue để điền form
         formState: { errors },
     } = useForm()
 
@@ -39,7 +30,7 @@ const CheckoutPage = () => {
 
     const hasItems = cartItems.length > 0;
 
-    // --- (State cho địa chỉ và phí ship) ---
+    // --- State ---
     const [orderPlaced, setOrderPlaced] = useState(false);
     const [isChecked, setIsChecked] = useState(false)
     const [shippingFee, setShippingFee] = useState(0); 
@@ -53,68 +44,125 @@ const CheckoutPage = () => {
     const [selectedProvince, setSelectedProvince] = useState(null);
     const [selectedDistrict, setSelectedDistrict] = useState(null);
     const [selectedWard, setSelectedWard] = useState(null);
-    // --- (Kết thúc State) ---
+    
+    // State lưu địa chỉ đã lưu của user (để auto-fill)
+    const [savedAddress, setSavedAddress] = useState(null);
+    // --- Kết thúc State ---
 
     const subtotal = cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0);
     const totalOrderPriceUSD = (Number(subtotal) + Number(shippingFee));
 
-    // --- SỬA LỖI 4: GỌI API ĐỊA CHỈ QUA BACKEND (PROXY) ---
+    // ========================================================================
+    // 1. LOGIC LẤY THÔNG TIN NGƯỜI DÙNG & AUTO-FILL
+    // ========================================================================
+    useEffect(() => {
+        if (currentUser?.email) {
+            // Gọi API lấy thông tin user (bao gồm defaultAddress)
+            // Lưu ý: Bạn cần đảm bảo route /api/auth/:email đã được tạo ở Backend như hướng dẫn trước
+            axios.get(`${getBaseUrl()}/api/auth/${currentUser.email}`)
+                .then(res => {
+                    if (res.data && res.data.defaultAddress) {
+                        const addr = res.data.defaultAddress;
+                        setSavedAddress(addr);
 
-    // 1. Lấy Tỉnh/Thành phố (GỌI BACKEND)
+                        // Điền các trường text
+                        setValue('name', currentUser.displayName || currentUser.username || "");
+                        setValue('email', currentUser.email);
+                        setValue('phone', addr.phone || "");
+                        setValue('address', addr.address || "");
+                    }
+                })
+                .catch(err => console.log("No saved address found or API not ready."));
+        }
+    }, [currentUser, setValue]);
+
+    // ========================================================================
+    // 2. LOGIC GHN (TỈNH -> HUYỆN -> XÃ) + AUTO-SELECT
+    // ========================================================================
+
+    // 2.1. Lấy danh sách Tỉnh/Thành
     useEffect(() => {
         const fetchProvinces = async () => {
             try {
-                // Sửa: Gọi API proxy /api/shipping/provinces
                 const response = await axios.get(`${getBaseUrl()}/api/shipping/provinces`);
-                setProvinces(response.data.data || []);
+                const provinceData = response.data.data || [];
+                setProvinces(provinceData);
+
+                // AUTO-SELECT TỈNH nếu có savedAddress
+                if (savedAddress && savedAddress.province_id) {
+                    const found = provinceData.find(p => p.ProvinceID === savedAddress.province_id);
+                    if (found) setSelectedProvince(found);
+                }
             } catch (error) {
                 console.error("Error fetching provinces", error);
             }
         };
+        // Chỉ chạy khi đã có savedAddress (hoặc lần đầu load nếu chưa có savedAddress)
+        // Dùng cờ hoặc check length để tránh loop, ở đây ta phụ thuộc vào savedAddress
         fetchProvinces();
-}, []); // Chỉ chạy 1 lần
+    }, [savedAddress]); 
 
-    // 2. Lấy Quận/Huyện khi Tỉnh thay đổi (GỌI BACKEND)
+    // 2.2. Lấy Quận/Huyện khi Tỉnh thay đổi
     useEffect(() => {
         const fetchDistricts = async () => {
             if (selectedProvince) {
                 try {
-                    // Sửa: Gọi API proxy /api/shipping/districts (dùng POST)
                     const response = await axios.post(`${getBaseUrl()}/api/shipping/districts`, 
                         { province_id: selectedProvince.ProvinceID }
                     );
-                    setDistricts(response.data.data || []);
+                    const districtData = response.data.data || [];
+                    setDistricts(districtData);
+
+                    // AUTO-SELECT HUYỆN nếu khớp ID và Tỉnh đã chọn đúng
+                    if (savedAddress && savedAddress.district_id && savedAddress.province_id === selectedProvince.ProvinceID) {
+                        const found = districtData.find(d => d.DistrictID === savedAddress.district_id);
+                        if (found) setSelectedDistrict(found);
+                    } else {
+                        // Nếu user tự đổi tỉnh, reset huyện
+                        setSelectedDistrict(null); 
+                    }
                 } catch (error) {
                     console.error("Error fetching districts", error);
                 }
+            } else {
+                setDistricts([]);
+                setSelectedDistrict(null);
             }
-            setWards([]); // Reset Phường/Xã
-            setSelectedWard(null);
         };
         fetchDistricts();
-    }, [selectedProvince]);
+    }, [selectedProvince, savedAddress]);
 
-    // 3. Lấy Phường/Xã khi Quận thay đổi (GỌI BACKEND)
+    // 2.3. Lấy Phường/Xã khi Quận thay đổi
     useEffect(() => {
         const fetchWards = async () => {
             if (selectedDistrict) {
                 try {
-                    // Sửa: Gọi API proxy /api/shipping/wards (dùng POST)
                     const response = await axios.post(`${getBaseUrl()}/api/shipping/wards`, 
                         { district_id: selectedDistrict.DistrictID }
                     );
-                    setWards(response.data.data || []);
+                    const wardData = response.data.data || [];
+                    setWards(wardData);
+
+                    // AUTO-SELECT XÃ
+                    if (savedAddress && savedAddress.ward_code && savedAddress.district_id === selectedDistrict.DistrictID) {
+                        const found = wardData.find(w => w.WardCode === savedAddress.ward_code);
+                        if (found) setSelectedWard(found);
+                    } else {
+                        setSelectedWard(null);
+                    }
                 } catch (error) {
                     console.error("Error fetching wards", error);
                 }
+            } else {
+                setWards([]);
+                setSelectedWard(null);
             }
         };
         fetchWards();
-    }, [selectedDistrict]);
+    }, [selectedDistrict, savedAddress]);
 
-    // --- KẾT THÚC SỬA LỖI 4 ---
 
-    // 4. Hàm tính phí (Đã đúng, gọi backend /api/shipping/calculate-fee)
+    // 4. Hàm tính phí
     const calculateFee = useCallback(async (districtID, wardCode) => {
         setIsCalculatingFee(true);
         try {
@@ -122,9 +170,7 @@ const CheckoutPage = () => {
                 to_district_id: districtID,
                 to_ward_code: wardCode,
             });
-            
             const feeInUSD = (response.data.shippingFee || 0) / EXCHANGE_RATE_USD_TO_VND;
-            
             setShippingFee(feeInUSD);
         } catch (error) {
             console.error("Error calculating shipping fee", error);
@@ -134,16 +180,14 @@ const CheckoutPage = () => {
         }
     }, []); 
 
-    // 5. Tự động tính phí khi chọn Phường/Xã (Đã đúng)
+    // 5. Tự động tính phí khi chọn xong Xã
     useEffect(() => {
         if (selectedWard) {
             calculateFee(selectedWard.DistrictID, selectedWard.WardCode);
         } else {
-            setShippingFee(0); // Reset phí nếu chưa chọn
+            setShippingFee(0);
         }
     }, [selectedWard, calculateFee]);
-
-    // --- (Logic chuyển hướng và onSubmit giữ nguyên như code bạn dán) ---
 
     useEffect(() => {
         if (!isLoading && !hasItems && !orderPlaced) {
@@ -153,7 +197,7 @@ const CheckoutPage = () => {
 
     const onSubmit = async (data) => {
         if (!selectedProvince || !selectedDistrict || !selectedWard) {
-Swal.fire('Error!', 'Please select your full shipping address.', 'error');
+            Swal.fire('Error!', 'Please select your full shipping address.', 'error');
             return;
         }
 
@@ -162,23 +206,27 @@ Swal.fire('Error!', 'Please select your full shipping address.', 'error');
             quantity: item.quantity || 1
         }));
 
+        // Object chứa thông tin địa chỉ đầy đủ để lưu vào DB
+        const fullAddressData = {
+            address: data.address,
+            city: selectedDistrict.DistrictName,
+            state: selectedProvince.ProvinceName,
+            ward: selectedWard.WardName,
+            country: "Vietnam",
+            zipcode: data.zipcode,
+            
+            // Các ID quan trọng cho GHN
+            province_id: selectedProvince.ProvinceID,
+            district_id: selectedDistrict.DistrictID,
+            ward_code: selectedWard.WardCode,
+            
+            phone: data.phone // Lưu kèm SĐT để tiện liên lạc
+        };
+
         const orderPayload = {
             name: data.name,
             email: currentUser?.email,
-            address: {
-                // Gửi cả text (lấy từ state) và ID (lấy từ state)
-                address: data.address, // Số nhà
-                city: selectedDistrict.DistrictName, // Quận/Huyện
-                state: selectedProvince.ProvinceName, // Tỉnh/TP
-                ward: selectedWard.WardName, // Phường/Xã
-                country: "Vietnam",
-                zipcode: data.zipcode, 
-                
-                // Gửi ID để backend lưu và tính phí
-                to_district_id: selectedDistrict.DistrictID,
-                to_ward_code: selectedWard.WardCode,
-                to_province_id: selectedProvince.ProvinceID,
-            },
+            address: fullAddressData,
             phone: data.phone,
             items: itemsPayload, 
             status: 'Pending'
@@ -187,6 +235,23 @@ Swal.fire('Error!', 'Please select your full shipping address.', 'error');
         try {
             setOrderPlaced(true); 
             const newOrder = await createOrder(orderPayload).unwrap();
+
+            // --- TÍNH NĂNG MỚI: LƯU ĐỊA CHỈ CHO LẦN SAU ---
+            try {
+                if (currentUser?.email) {
+                    // Gọi API update-address đã tạo ở Backend
+                    await axios.put(`${getBaseUrl()}/api/auth/update-address`, fullAddressData, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token') || localStorage.getItem('userToken')}` 
+                        }
+                    });
+                    console.log("Address saved successfully!");
+                }
+            } catch (saveError) {
+                console.warn("Failed to save address for future use", saveError);
+                // Không chặn quy trình đặt hàng nếu lưu địa chỉ lỗi
+            }
+            // --------------------------------------------------
 
             if (paymentMethod === 'cod') {
                 Swal.fire("Confirmed Order (COD)", "Your order placed successfully!", "success");
@@ -208,12 +273,8 @@ Swal.fire('Error!', 'Please select your full shipping address.', 'error');
     }
 
     if (isLoading) return <Loading />
+    if (!hasItems && !orderPlaced) return <Loading />; 
     
-    if (!hasItems && !orderPlaced) {
-        return <Loading />; 
-    }
-    
-    // --- (Toàn bộ JSX Giữ nguyên như code bạn dán) ---
     return (
         <section>
             <div className="min-h-screen p-6 bg-gray-100 flex items-center justify-center">
@@ -225,7 +286,7 @@ Swal.fire('Error!', 'Please select your full shipping address.', 'error');
                              <p className="text-gray-500 mb-1">Items: {cartItems.length > 0 ? cartItems.length : 0}</p>
                              <p className="text-gray-500 mb-1">Subtotal: ${subtotal.toFixed(2)}</p>
                              <p className="text-gray-500 mb-1">
-Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}`}
+                                Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}`}
                              </p>
                              <p className="font-semibold text-lg text-gray-600 mb-6">
                                  Total Price: ${totalOrderPriceUSD.toFixed(2)}
@@ -272,7 +333,7 @@ Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}
                                 <div className="lg:col-span-2">
                                     <div className="grid gap-4 gap-y-2 text-sm grid-cols-1 md:grid-cols-5">
                                         {/* Tên */}
-<div className="md:col-span-5">
+                                        <div className="md:col-span-5">
                                             <label htmlFor="full_name">Full Name</label>
                                             <input
                                                 {...register("name", { required: true })}
@@ -303,15 +364,20 @@ Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}
                                                 type="text" name="address" id="address" className="h-10 border mt-1 rounded px-4 w-full bg-gray-50" placeholder="Số nhà, tên đường..." />
                                         </div>
 
-                                        {/* Tỉnh/Thành */}
+                                        {/* Tỉnh/Thành - SỬA THÀNH CONTROLLED COMPONENT */}
                                         <div className="md:col-span-2">
                                             <label htmlFor="province">Tỉnh / Thành phố</label>
                                             <select 
                                                 id="province"
                                                 className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                                                onChange={(e) => setSelectedProvince(JSON.parse(e.target.value))}
+                                                // Giá trị được kiểm soát bởi state
+                                                value={selectedProvince ? JSON.stringify(selectedProvince) : ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value ? JSON.parse(e.target.value) : null;
+                                                    setSelectedProvince(val);
+                                                }}
                                                 required
->
+                                            >
                                                 <option value="">Chọn Tỉnh/Thành</option>
                                                 {provinces.map(p => (
                                                     <option key={p.ProvinceID} value={JSON.stringify(p)}>{p.ProvinceName}</option>
@@ -319,13 +385,17 @@ Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}
                                             </select>
                                         </div>
 
-                                        {/* Quận/Huyện */}
+                                        {/* Quận/Huyện - SỬA THÀNH CONTROLLED COMPONENT */}
                                         <div className="md:col-span-2">
                                             <label htmlFor="district">Quận / Huyện</label>
                                             <select 
                                                 id="district"
                                                 className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                                                onChange={(e) => setSelectedDistrict(JSON.parse(e.target.value))}
+                                                value={selectedDistrict ? JSON.stringify(selectedDistrict) : ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value ? JSON.parse(e.target.value) : null;
+                                                    setSelectedDistrict(val);
+                                                }}
                                                 disabled={!selectedProvince}
                                                 required
                                             >
@@ -336,13 +406,17 @@ Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}
                                             </select>
                                         </div>
                                         
-                                        {/* Phường/Xã */}
+                                        {/* Phường/Xã - SỬA THÀNH CONTROLLED COMPONENT */}
                                         <div className="md:col-span-1">
                                             <label htmlFor="ward">Phường / Xã</label>
                                             <select 
                                                 id="ward"
                                                 className="h-10 border mt-1 rounded px-4 w-full bg-gray-50"
-                                                onChange={(e) => setSelectedWard(JSON.parse(e.target.value))}
+                                                value={selectedWard ? JSON.stringify(selectedWard) : ""}
+                                                onChange={(e) => {
+                                                    const val = e.target.value ? JSON.parse(e.target.value) : null;
+                                                    setSelectedWard(val);
+                                                }}
                                                 disabled={!selectedDistrict}
                                                 required
                                             >
@@ -355,7 +429,7 @@ Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}
 
                                         {/* Zipcode */}
                                         <div className="md:col-span-1">
-<label htmlFor="zipcode">Zipcode</label>
+                                            <label htmlFor="zipcode">Zipcode</label>
                                             <input
                                                 {...register("zipcode")}
                                                 type="text" name="zipcode" id="zipcode" className="transition-all flex items-center h-10 border mt-1 rounded px-4 w-full bg-gray-50" placeholder="(Optional)" />
@@ -375,7 +449,7 @@ Shipping Fee: {isCalculatingFee ? "Calculating..." : `$${shippingFee.toFixed(2)}
                                         <div className="md:col-span-5 text-right">
                                             <div className="inline-flex items-end">
                                                 <button
-                                                    disabled={!isChecked || isLoading || !hasItems || isCalculatingFee || !selectedWard} // Thêm !selectedWard
+                                                    disabled={!isChecked || isLoading || !hasItems || isCalculatingFee || !selectedWard} 
                                                     className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed">
                                                     {isLoading ? 'Processing...' : (isCalculatingFee ? 'Calculating Fee...' : 'Place an Order')}
                                                 </button>

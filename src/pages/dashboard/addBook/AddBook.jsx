@@ -103,6 +103,13 @@ const AddBook = () => {
             placeholder="New Price"
             register={register}
             />
+            <InputField
+              label="Stock (Inventory)"
+              name="stock"
+              type="number"
+              placeholder="Quantity in stock"
+              register={register}
+          />
         </div>
 
         {/* Sửa lại Input File */}

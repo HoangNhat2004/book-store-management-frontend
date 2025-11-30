@@ -13,6 +13,8 @@ import getBaseUrl from "../utils/baseURL";
 // === 1. IMPORT DISPATCH VÀ ACTIONS ===
 import { useDispatch } from 'react-redux';
 import { loadCartFromStorage, clearCart } from '../redux/features/cart/cartSlice';
+// 1. IMPORT COMPONENT LOADING
+import Loading from "../components/Loading"; 
 
 const AuthContext = createContext();
 
@@ -163,6 +165,10 @@ export const AuthProvide = ({children}) => {
         logout
     }
     
+    if (loading) {
+        return <Loading />; // Hiển thị Loading thay vì màn hình trắng
+    }
+
     return (
         <AuthContext.Provider value={value}>
             {!loading && children} 
