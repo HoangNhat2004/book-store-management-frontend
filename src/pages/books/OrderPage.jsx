@@ -12,6 +12,8 @@ const useQuery = () => {
 
 const OrderPage = () => {
   const { currentUser } = useAuth();
+  
+  // Skip query nếu chưa có email để tránh lỗi 404/400
   const { data: orders = [], isLoading, isError, refetch } = useGetOrderByEmailQuery(currentUser?.email, {
       skip: !currentUser?.email, 
   });
@@ -21,85 +23,68 @@ const OrderPage = () => {
   const [paymentStatus, setPaymentStatus] = useState(null);
   const query = useQuery();
 
-  // --- BẮT ĐẦU SỬA LỖI LOOP ---
-  // Lấy các giá trị ra khỏi hook để dùng trong dependency array
   const responseCode = query.get('vnp_ResponseCode');
   const orderIdFromVNPay = query.get('vnp_TxnRef');
 
   useEffect(() => {
-    // Xóa query params khỏi URL ngay lập tức
+    // 1. Xóa query params để tránh chạy lại logic khi refresh
     if (responseCode) {
         window.history.replaceState(null, null, window.location.pathname);
     }
 
-    // Tạo một hàm async bên trong để xử lý
     const handlePaymentResult = async (code, orderId) => {
         if (code === '00' && orderId) {
-            // 1. THANH TOÁN THÀNH CÔNG
+            // THANH TOÁN THÀNH CÔNG
             setPaymentStatus({
                 type: 'success',
-                message: 'Payment successful! Confirming order status, please wait...'
+                message: 'Payment successful! Updating order status...'
             });
             
             try {
-                // 2. GỌI API MỚI để báo backend cập nhật
+                // Gọi API xác nhận thanh toán
                 await confirmPayment(orderId).unwrap();
                 
-                // 3. Báo thành công hoàn tất
                 setPaymentStatus({
                     type: 'success',
                     message: 'Payment completed successfully! Your order is being processed.'
                 });
                 
-                // 4. Tải lại dữ liệu (bây giờ sẽ là "Processing")
-                refetch();
+                refetch(); // Tải lại danh sách đơn hàng
 
             } catch (error) {
                 console.error("Failed to confirm payment:", error);
                 setPaymentStatus({
                     type: 'error',
-                    message: 'Payment was successful, but failed to update status. Please contact support.'
+                    message: 'Payment was successful at VNPay, but we failed to update the order status. Please contact support.'
                 });
             }
 
         } else if (code === '24') {
-            // 2. NGƯỜI DÙNG HỦY
+            // NGƯỜI DÙNG HỦY
             setPaymentStatus({
                 type: 'info',
-                message: 'Payment was cancelled. Your order remains pending.'
+                message: 'Payment was cancelled.'
             });
-            refetch(); 
         } else if (code) {
-            // 3. LỖI KHÁC
+            // LỖI KHÁC
             setPaymentStatus({
                 type: 'error',
-                message: 'Payment failed. Please try again or select a different payment method.'
+                message: 'Payment failed. Please try again.'
             });
-            refetch(); 
         }
     };
 
-    // Chỉ chạy logic nếu có responseCode (khi effect này chạy lần đầu)
     if (responseCode) {
       handlePaymentResult(responseCode, orderIdFromVNPay);
     }
 
-  // SỬA LẠI DEPENDENCY ARRAY:
-  // Chỉ chạy lại effect này nếu các giá trị TRONG URL thay đổi
-  // hoặc khi các hàm (refetch, confirmPayment) thay đổi.
-  }, [responseCode, orderIdFromVNPay, refetch, confirmPayment]); 
-  // --- KẾT THÚC SỬA ---
+  }, [responseCode, orderIdFromVNPay, confirmPayment, refetch]); 
 
 
   const validOrders = orders.filter(order => order.items && order.items.length > 0);
 
-  // SỬA HIỂN THỊ LỖI:
-  // Nếu isError, hiển thị lỗi (đây là lỗi thật, không phải lỗi "Pending")
+  if (isLoading) return <Loading />;
   if (isError) return <div className="text-center text-red-600 py-10">Error loading orders. Please refresh the page.</div>;
-  
-  // Chỉ hiển thị Loading khi isLoading và không có lỗi
-  if (isLoading && !isError) return <Loading />; 
-  
 
   const getStatusColor = (status) => {
     const colors = {
@@ -107,7 +92,7 @@ const OrderPage = () => {
       'Processing': 'bg-blue-100 text-blue-800', 
       'Shipped': 'bg-purple-100 text-purple-800',
       'Delivered': 'bg-green-100 text-green-800',
-      'Cancelled': 'bg-accent-light text-accent' 
+      'Cancelled': 'bg-red-100 text-red-800' 
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
   };
@@ -128,7 +113,6 @@ const OrderPage = () => {
         </div>
       )}
 
-
       {validOrders.length === 0 ? (
         <div className="text-center py-16 text-gray-500 bg-white border border-subtle rounded-lg shadow-sm">
             <p className="text-xl font-heading">No orders found!</p>
@@ -144,14 +128,21 @@ const OrderPage = () => {
               <div className="flex flex-col sm:flex-row justify-between sm:items-start mb-4">
                 <div>
                   <h3 className="font-heading font-bold text-lg text-ink">
-                    Order ID: <span className="text-primary">{order._id.slice(-8).toUpperCase()}</span>
+                    Order ID: <span className="text-primary">{order._id?.slice(-8).toUpperCase()}</span>
                   </h3>
                   <p className="text-sm text-gray-600 mt-1">
-                    Placed on: {new Date(order.createdAt).toLocaleDateString()} at {new Date(order.createdAt).toLocaleTimeString()}
+                    Placed on: {new Date(order.createdAt).toLocaleDateString()}
                   </p>
+                  {order.ghnOrderCode && (
+                      <div className="mt-2 inline-block bg-purple-50 px-3 py-1 rounded border border-purple-200">
+                          <p className="text-sm text-purple-700 font-bold">
+                              📦 Tracking Code: {order.ghnOrderCode}
+                          </p>
+                      </div>
+                  )}
                 </div>
                 <div className="text-left sm:text-right mt-4 sm:mt-0">
-                  <p className="text-2xl font-heading font-bold text-ink">${order.totalPrice.toFixed(2)}</p>
+                  <p className="text-2xl font-heading font-bold text-ink">${order.totalPrice?.toFixed(2)}</p>
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium mt-2 ${
                     getStatusColor(order.status)
                   }`}>
@@ -171,7 +162,7 @@ const OrderPage = () => {
                   <div>
                     <p><strong>Address:</strong></p>
                     <p className="text-gray-600">
-                    {order.address?.address}, {order.address?.city}, {order.address?.state}, {order.address?.country} {order.address?.zipcode && `- ${order.address.zipcode}`}
+                    {order.address?.address}, {order.address?.city}, {order.address?.state}, {order.address?.country}
                   </p>
                   </div>
                 </div>
@@ -182,7 +173,7 @@ const OrderPage = () => {
                 <div className="space-y-3">
                   {order.items?.map((item, i) => (
                     <div key={item.productId || i} className="flex justify-between items-center bg-paper p-3 rounded-md">
-                        <div>
+                      <div>
                           <p className="font-medium text-ink">{item.title}</p>
                           <p className="text-xs text-gray-600">Quantity: {item.quantity}</p>
                         </div>

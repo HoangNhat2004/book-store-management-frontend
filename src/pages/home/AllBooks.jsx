@@ -7,34 +7,45 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import { useFetchAllBooksQuery } from '../../redux/features/books/booksApi';
-
-// (Copy mảng categories từ TopSellers)
-const categories = ["Choose a genre", "Business", "Fiction", "Horror", "Adventure"]
+// Import hook lấy danh mục từ API
+import { useFetchAllCategoriesQuery } from '../../redux/features/category/categoryApi';
 
 const AllBooks = () => {
-    
     const [selectedCategory, setSelectedCategory] = useState("Choose a genre");
-    const {data: books = []} = useFetchAllBooksQuery();
-  
-    // --- LOGIC LỌC TẤT CẢ SÁCH ---
-    const filteredBooks = selectedCategory === "Choose a genre" 
-        ? books // Nếu không chọn -> hiển thị TẤT CẢ SÁCH
-        : books.filter(book => book.category === selectedCategory.toLowerCase()) // Nếu có chọn -> lọc
     
+    // Gọi API lấy Sách và Danh mục
+    const { data: books = [] } = useFetchAllBooksQuery();
+    const { data: categoriesData = [] } = useFetchAllCategoriesQuery();
+
+    // Tạo danh sách options cho dropdown (Động)
+    const categoryOptions = ["Choose a genre", ...categoriesData.map(cat => cat.name)];
+
+    // Logic lọc sách (Hỗ trợ cả sách cũ string và sách mới object)
+    const filteredBooks = selectedCategory === "Choose a genre" 
+        ? books 
+        : books.filter(book => {
+            const categoryName = book.category?.name || book.category || "";
+            return categoryName.toLowerCase() === selectedCategory.toLowerCase();
+        });
+
     return (
-        <div className='py-10'>
-            <h2 className='text-3xl font-semibold mb-6'>All Books</h2>
-            {/* category filtering */}
-            <div className='mb-8 flex items-center'>
-                <select
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    name="category" id="category" className='border bg-[#EAEAEA] border-gray-300 rounded-md px-4 py-2 focus:outline-none'>
-                    {
-                        categories.map((category, index) => (
-                            <option key={index} value={category}>{category}</option>
-                        ))
-                    }
-                </select>
+        <div className='py-16'>
+            <div className='flex flex-col sm:flex-row justify-between items-center mb-8'>
+                 <h2 className='text-3xl font-semibold mb-6'>All Books</h2>
+                
+                <div className='mb-8 flex items-center'>
+                    <select
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        name="category" id="category" 
+                        className='border bg-[#EAEAEA] border-gray-300 rounded-md px-4 py-2 focus:outline-none'
+                    >
+                        {
+                            categoryOptions.map((category, index) => (
+                                <option key={index} value={category}>{category}</option>
+                            ))
+                        }
+                    </select>
+                </div>
             </div>
 
             <Swiper
@@ -48,14 +59,14 @@ const AllBooks = () => {
                     },
                     768: {
                         slidesPerView: 2,
-                        spaceBetween: 30, // Sửa lại
+                        spaceBetween: 30,
                     },
                     1024: {
-                        slidesPerView: 3, // Sửa lại
+                        slidesPerView: 3,
                         spaceBetween: 30,
                     },
                     1180: {
-                        slidesPerView: 4, // Sửa lại
+                        slidesPerView: 4,
                         spaceBetween: 30,
                     }
                 }}

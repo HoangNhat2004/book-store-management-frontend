@@ -1,28 +1,60 @@
 import React from 'react'
 import { FiShoppingCart } from "react-icons/fi"
-import { HiOutlineHeart, HiHeart } from 'react-icons/hi' // 1. Import icon đặc
+import { HiOutlineHeart, HiHeart } from 'react-icons/hi'
 import { useParams } from "react-router-dom"
-import { useDispatch, useSelector } from 'react-redux'; // 2. Import useSelector
+import { useDispatch, useSelector } from 'react-redux';
 import { addToCart } from '../../redux/features/cart/cartSlice';
 import { useFetchBookByIdQuery } from '../../redux/features/books/booksApi';
-// 3. Import cả hai action
-import { addToWishlist, removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice'; 
-import { getImgUrl } from '../../utils/getImgUrl'; // (Vẫn dùng getImgUrl)
+import { addToWishlist, removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice';
+import { getImgUrl } from '../../utils/getImgUrl';
+
+// --- 1. IMPORT THÊM ---
+import { useAuth } from '../../context/AuthContext';
+import { useAddToCartDBMutation } from '../../redux/features/cart/cartApi';
+import Swal from 'sweetalert2';
+// ---------------------
 
 const SingleBook = () => {
     const {id} = useParams();
     const {data: book, isLoading, isError} = useFetchBookByIdQuery(id);
     const dispatch =  useDispatch();
 
-    // 4. Lấy wishlist và kiểm tra
+    // --- 2. KHAI BÁO HOOK ---
+    const { currentUser } = useAuth();
+    const [addToCartDB] = useAddToCartDBMutation();
+    // -----------------------
+
     const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
     const isWishlisted = book ? wishlistItems.some(item => item._id === book._id) : false;
 
-    const handleAddToCart = (product) => {
-        dispatch(addToCart(product))
+    // --- 3. SỬA HÀM ADD TO CART ---
+    const handleAddToCart = async (product) => {
+        if (currentUser) {
+            try {
+                await addToCartDB({ productId: product._id, quantity: 1 }).unwrap();
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Added to Cart',
+                    showConfirmButton: false,
+                    timer: 1000
+                });
+            } catch (error) {
+                Swal.fire('Error', 'Failed to add to cart', 'error');
+            }
+        } else {
+            dispatch(addToCart(product));
+            Swal.fire({
+                position: 'top-end',
+                icon: 'success',
+                title: 'Added to Cart',
+                showConfirmButton: false,
+                timer: 1000
+            });
+        }
     }
+    // -----------------------------
 
-    // 5. Sửa thành hàm toggle
     const handleWishlistToggle = (product) => {
         if (isWishlisted) {
             dispatch(removeFromWishlist(product));
@@ -31,24 +63,21 @@ const SingleBook = () => {
         }
     }
 
-    if(isLoading) return <div>Loading...</div> // (Sẽ thay bằng component Loading sau)
+    if(isLoading) return <div>Loading...</div>
     if(isError) return <div>Error happending to load book info</div>
     
   return (
-    // --- BẮT ĐẦU SỬA TOÀN BỘ JSX ---
     <div className="max-w-4xl mx-auto py-12 px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 items-start">
             
-            {/* Cột 1: Ảnh Sách */}
             <div className="w-full bg-white rounded-lg shadow-sm border border-subtle p-4">
                 <img
-                    src={getImgUrl(book.coverImage)} // Dùng getImgUrl
+                    src={getImgUrl(book.coverImage)}
                     alt={book.title}
                     className="w-full h-auto object-cover rounded-md"
                 />
             </div>
 
-            {/* Cột 2: Thông tin & Nút bấm */}
             <div className="flex flex-col">
                 <h1 className="text-4xl font-heading font-bold text-ink mb-4">{book.title}</h1>
                 
@@ -64,7 +93,7 @@ const SingleBook = () => {
                 <div className="border-t border-subtle pt-4 mb-6">
                     <p className="text-gray-600 mb-2"><strong>Author:</strong> {book.author || 'N/A'}</p>
                     <p className="text-gray-600 mb-2 capitalize">
-                        <strong>Category:</strong> {book?.category}
+                        <strong>Category:</strong> {book?.category?.name || book?.category || "Unknown"}
                     </p>
                     <p className="text-gray-600 mb-4">
                         <strong>Published:</strong> {new Date(book?.createdAt).toLocaleDateString()}
@@ -73,7 +102,6 @@ const SingleBook = () => {
 
                 <p className="text-ink/80 text-base font-body mb-8 leading-relaxed">{book.description}</p>
 
-                {/* Khối Nút Bấm */}
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => handleAddToCart(book)} 
@@ -100,7 +128,6 @@ const SingleBook = () => {
             </div>
         </div>
     </div>
-    // --- KẾT THÚC SỬA JSX ---
   )
 }
 

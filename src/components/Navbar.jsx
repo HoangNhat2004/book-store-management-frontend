@@ -7,24 +7,34 @@ import avatarImg from "../assets/avatar.png"
 import { useState } from "react";
 import { useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
+// Import API để lấy giỏ hàng DB
+import { useGetCartQuery } from '../redux/features/cart/cartApi';
 
-// --- BẮT ĐẦU SỬA ---
+// --- ĐÃ CẬP NHẬT NAVIGATION THEO Ý BẠN ---
 const navigation = [
     {name: "Dashboard", href:"/user-dashboard"},
     {name: "Orders", href:"/orders"},
     {name: "Cart Page", href:"/cart"},
-    // {name: "Check Out", href:"/checkout"}, // <-- ĐÃ XÓA DÒNG NÀY
 ]
-// --- KẾT THÚC SỬA ---
+// -----------------------------------------
 
 const Navbar = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
-    const cartItems = useSelector(state => state.cart.cartItems);
+
     const { wishlistItems } = useSelector(state => state.wishlist);
-    const {currentUser, logout} = useAuth()
+    const { currentUser, logout } = useAuth()
     const navigate = useNavigate()
     
+    // --- LOGIC ĐẾM SỐ LƯỢNG GIỎ HÀNG ---
+    const localCartItems = useSelector(state => state.cart.cartItems);
+    const { data: dbCart } = useGetCartQuery(undefined, { skip: !currentUser });
+
+    const cartItemCount = currentUser 
+        ? (dbCart?.items?.reduce((total, item) => total + item.quantity, 0) || 0)
+        : (localCartItems.reduce((total, item) => total + item.quantity, 0) || 0);
+    // -----------------------------------
+
     const handleLogOut = () => {
         logout()
     }
@@ -38,7 +48,7 @@ const Navbar = () => {
     }
   
     return (
-        <header className="max-w-screen-2xl mx-auto px-4 py-6 border-b border-subtle"> {/* Thêm border */}
+        <header className="max-w-screen-2xl mx-auto px-4 py-6 border-b border-subtle"> 
             <nav className="flex justify-between items-center">
                 {/* left side */}
                 <div className="flex items-center md:gap-16 gap-4">
@@ -52,7 +62,6 @@ const Navbar = () => {
                             <IoSearchOutline className="absolute inline-block left-3 inset-y-2 cursor-pointer text-gray-500" 
                                 onClick={handleSearch}
                             />
-                            {/* Sửa lại ô search */}
                             <input 
                                 type="text" 
                                 placeholder="Search books..."
@@ -69,13 +78,12 @@ const Navbar = () => {
                     <div >
                         {
                             currentUser ? (
-                                // Nếu CÓ currentUser (bất kể là Google hay JWT)
                                 <>
                                 <button onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                                     <img 
-                                        src={currentUser.photoURL || avatarImg} 
+                                        src={currentUser?.photoURL || avatarImg} 
                                         alt="User avatar" 
-                                        className={`size-8 rounded-full ${currentUser ? 'ring-2 ring-accent' : ''}`} // Sửa màu ring
+                                        className={`size-8 rounded-full ${currentUser ? 'ring-2 ring-accent' : ''}`} 
                                     />
                                 </button>
                                 {/* show dropdowns */}
@@ -103,7 +111,6 @@ const Navbar = () => {
                                 }
                                 </> 
                             ) : (
-                                // Nếu KHÔNG có currentUser -> Luôn hiển thị icon Login
                                 <Link to="/login"> <HiOutlineUser className="size-6 text-ink" /></Link>
                             )
                         }
@@ -111,17 +118,17 @@ const Navbar = () => {
                     
                     <Link to="/wishlist" className="hidden sm:block relative p-1">
                         <HiOutlineHeart className="size-6 text-ink hover:text-accent" />
-                        {wishlistItems.length > 0 && (
+                        {wishlistItems && wishlistItems.length > 0 && (
                             <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-accent text-white rounded-full text-xs w-4 h-4 flex items-center justify-center">
                                 {wishlistItems.length}
                             </span>
                         )}
                     </Link>
 
-                    <Link to="/cart" className="bg-accent p-1 sm:px-6 px-3 flex items-center rounded-full text-white"> {/* Sửa màu và bo tròn */}
+                    <Link to="/cart" className="bg-accent p-1 sm:px-6 px-3 flex items-center rounded-full text-white">
                         <HiOutlineShoppingCart className='size-5' />
                         {
-                            cartItems.length > 0 ?  <span className="text-sm font-semibold sm:ml-2">{cartItems.length}</span> :  <span className="text-sm font-semibold sm:ml-2">0</span>
+                            cartItemCount > 0 ?  <span className="text-sm font-semibold sm:ml-2">{cartItemCount}</span> :  <span className="text-sm font-semibold sm:ml-2">0</span>
                         }
                     </Link>
                 </div>

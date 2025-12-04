@@ -1,19 +1,16 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "../firebase/firebase.config";
 import { 
-    createUserWithEmailAndPassword,
     GoogleAuthProvider, 
     onAuthStateChanged, 
-    signInWithEmailAndPassword,
     signInWithPopup, 
     signOut 
 } from "firebase/auth";
 import axios from 'axios';
 import getBaseUrl from "../utils/baseURL";
-// === 1. IMPORT DISPATCH VÀ ACTIONS ===
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { loadCartFromStorage, clearCart } from '../redux/features/cart/cartSlice';
-// 1. IMPORT COMPONENT LOADING
+import cartApi from '../redux/features/cart/cartApi'; 
 import Loading from "../components/Loading"; 
 
 const AuthContext = createContext();
@@ -27,151 +24,137 @@ const googleProvider = new GoogleAuthProvider();
 export const AuthProvide = ({children}) => {
     const [currentUser, setCurrentUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    
-    // === 2. KHỞI TẠO DISPATCH ===
     const dispatch = useDispatch();
+    
+    const localCartItems = useSelector(state => state.cart.cartItems);
+
+    // Hàm đồng bộ (Chạy ngầm)
+    const syncLocalCartToDB = async (token) => {
+        const savedCart = localStorage.getItem('cart');
+        const cartItems = savedCart ? JSON.parse(savedCart) : [];
+
+        if (cartItems.length > 0) {
+            try {
+                for (const item of cartItems) {
+                    await axios.post(`${getBaseUrl()}/api/cart/add`, 
+                        { productId: item._id, quantity: item.quantity },
+                        { headers: { 'Authorization': `Bearer ${token}` } }
+                    );
+                }
+                console.log("Synced local cart to DB successfully!");
+                
+                localStorage.removeItem("cart"); 
+                dispatch(clearCart()); 
+                dispatch(cartApi.util.invalidateTags(['Cart']));
+            } catch (error) {
+                console.error("Failed to sync cart:", error);
+            }
+        }
+    };
 
     const registerUser = async (username, email, password) => {
         const response = await axios.post(`${getBaseUrl()}/api/auth/register`, {
-            username,
-            email: email,
-            password,
-            role: 'user' 
+            username, email, password, role: 'user' 
         });
-        
-        if (response.data.message !== "User registered successfully") {
-            throw new Error(response.data.message);
-        }
         return response.data;
     }
 
     const loginUser = async (identifier, password) => {
-        const response = await axios.post(`${getBaseUrl()}/api/auth/login`, {
-            identifier, 
-            password
-        });
+        const response = await axios.post(`${getBaseUrl()}/api/auth/login`, { identifier, password });
 
         if (response.data && response.data.token) {
-            localStorage.setItem('userToken', response.data.token); 
+            const token = response.data.token;
+            
+            localStorage.setItem('userToken', token); 
             localStorage.setItem('user', JSON.stringify(response.data.user));
             setCurrentUser(response.data.user);
             
-            // === 3. LOAD CART SAU KHI LOGIN ===
-            dispatch(loadCartFromStorage());
+            // Chạy sync nhưng không await để UI phản hồi ngay
+            syncLocalCartToDB(token);
         }
         return response.data;
     }
 
     const signInWithGoogle = async () => {
-        const result = await signInWithPopup(auth, googleProvider);
-        
-        // === 4. LOAD CART SAU KHI GOOGLE LOGIN ===
-        dispatch(loadCartFromStorage());
-        
-        return result;
+        return await signInWithPopup(auth, googleProvider);
     }
 
     const logout = () => {
-        // --- BỎ ĐOẠN CODE LẤY USER KEY VÀ XÓA CART CŨ ---
-        // (Xóa hoặc comment lại đoạn dưới đây)
-        /*
-        const getUserKey = () => { ... };
-        const userKey = getUserKey();
-        if (userKey) {
-            localStorage.removeItem(`cart_${userKey}`); 
-        }
-        */
-        
-        // --- 1. XÓA TOKEN VÀ USER TRƯỚC ---
-        // Việc này ngắt kết nối user hiện tại, bảo vệ dữ liệu giỏ hàng của họ không bị ghi đè
         localStorage.removeItem('userToken'); 
         localStorage.removeItem('user');
-        localStorage.removeItem('firebaseUser'); // Xóa thêm cái này nếu bạn đã thêm ở bước trước
+        localStorage.removeItem('firebaseUser'); 
+        localStorage.removeItem('cart');
         
-        // --- 2. SAU ĐÓ MỚI CLEAR CART TRONG REDUX ---
-        // Lúc này hệ thống không còn biết user là ai, nên cart rỗng sẽ không lưu vào hồ sơ user cũ
         dispatch(clearCart());
-        
+        dispatch(cartApi.util.resetApiState());
+
         setCurrentUser(null); 
-        
         return signOut(auth);
     }
 
     useEffect(() => {
-        let isMounted = true; 
-        
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (!isMounted) return;
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            try {
+                if (user) {
+                    setCurrentUser(user);
+                    // --- QUAN TRỌNG: TẮT LOADING NGAY LẬP TỨC ---
+                    setLoading(false); 
+                    // ---------------------------------------------
 
-            if(user) {
-                setCurrentUser(user);
-                setLoading(false);
-                const { email, displayName, photoURL } = user;
-                const userData = { 
-                    email, 
-                    username: displayName, 
-                    photoURL 
-                };
-                localStorage.setItem('firebaseUser', JSON.stringify(userData));
-                
-                // === 9. LOAD CART KHI GOOGLE USER LOGIN ===
-                dispatch(loadCartFromStorage());
-                
-                const {email: userEmail, displayName: userName, photoURL: userPhoto} = user; // Đổi tên biến tránh trùng
-                axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
-                    email: userEmail,
-                    username: userName,
-                    photoURL: userPhoto
-                }).catch(err => {
-                    console.error("Failed to sync Google user profile to backend:", err);
-                });
-            } else {
-                // Khi không có user (hoặc vừa logout xong)
-                const token = localStorage.getItem('userToken');
-                const storedUser = localStorage.getItem('user');
-                
-                if (!token || !storedUser) {
-                    // Đảm bảo xóa key rác nếu không còn token hợp lệ
-                    localStorage.removeItem('firebaseUser');
-                }
-
-                if (token && storedUser) {
+                    // Sau đó mới chạy các việc phụ (lấy token, sync cart)
                     try {
-                       const parsedUser = JSON.parse(storedUser);
-                       setCurrentUser(parsedUser);
-                       dispatch(loadCartFromStorage());
-                    } catch (e) {
-                       console.error("Failed to parse stored user", e);
-                       localStorage.removeItem('userToken');
-                       localStorage.removeItem('user');
+                        const token = await user.getIdToken();
+                        localStorage.setItem('userToken', token);
+                        await syncLocalCartToDB(token);
+                    } catch (err) {
+                        console.error("Background sync error:", err);
                     }
+
+                    const { email, displayName, photoURL } = user;
+                    const userData = { email, username: displayName, photoURL };
+                    localStorage.setItem('firebaseUser', JSON.stringify(userData));
+                    
+                    axios.post(`${getBaseUrl()}/api/profiles/upsert`, {
+                        email, username: displayName, photoURL
+                    }).catch(err => console.error("Sync profile err:", err));
+
+                } else {
+                    // Logic khi chưa login / logout
+                    const token = localStorage.getItem('userToken');
+                    const storedUser = localStorage.getItem('user');
+                    
+                    if (!token || !storedUser) {
+                        localStorage.removeItem('firebaseUser');
+                        localStorage.removeItem('userToken');
+                        setCurrentUser(null);
+                    } else {
+                        try {
+                            const parsedUser = JSON.parse(storedUser);
+                            setCurrentUser(parsedUser);
+                        } catch (e) {
+                            localStorage.removeItem('userToken');
+                            localStorage.removeItem('user');
+                            setCurrentUser(null);
+                        }
+                    }
+                    setLoading(false);
                 }
-                setLoading(false); 
+            } catch (error) {
+                console.error("Auth Check Error:", error);
+                setLoading(false); // Luôn tắt loading dù có lỗi
             }
         });
 
-        return () => {
-            isMounted = false;
-            unsubscribe();
-        };
-    }, [dispatch]) // Thêm dispatch vào dependency
+        return () => unsubscribe();
+    }, [dispatch]); 
 
-    const value = {
-        currentUser,
-        loading,
-        registerUser,
-        loginUser,
-        signInWithGoogle,
-        logout
-    }
+    const value = { currentUser, loading, registerUser, loginUser, signInWithGoogle, logout }
     
-    if (loading) {
-        return <Loading />; // Hiển thị Loading thay vì màn hình trắng
-    }
+    if (loading) return <Loading />;
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children} 
+            {children} 
         </AuthContext.Provider>
     )
 }

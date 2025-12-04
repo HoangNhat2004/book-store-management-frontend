@@ -19,6 +19,13 @@ import UserDashboard from "../pages/dashboard/users/UserDashboard";
 import Orders from "../pages/dashboard/Orders";
 import SearchPage from "../pages/SearchPage";
 import WishlistPage from "../pages/books/WishlistPage";
+import ManageEmployees from "../pages/dashboard/manageEmployees/ManageEmployees";
+import EmployeeLogin from "../components/EmployeeLogin";
+import ManageBanner from "../pages/dashboard/manageBanner/ManageBanner";
+import ManageSettings from "../pages/dashboard/manageSettings/ManageSettings";
+import ManageCategory from "../pages/dashboard/manageCategory/ManageCategory";
+import StaffRoute from "./StaffRoute"; 
+import EmployeeRoute from "./EmployeeRoute";
 
 const router = createBrowserRouter([
     {
@@ -76,20 +83,20 @@ const router = createBrowserRouter([
       element: <AdminLogin/>
     },
     {
+      path: "/employee",  // Truy cập bằng: localhost:5173/employee
+      element: <EmployeeLogin/>
+    },
+    {
       path: "/dashboard", // <-- Route Dashboard (riêng biệt, OK)
-      element: <AdminRoute>
-        <DashboardLayout/>
-      </AdminRoute>,
+      element: <StaffRoute><DashboardLayout/></StaffRoute>,
       children:[
-        {
-          path: "",
-          element: <AdminRoute><Dashboard/></AdminRoute>
+        { 
+            path: "", 
+            element: <AdminRoute><Dashboard/></AdminRoute> 
         },
-        {
-          path: "add-new-book",
-          element: <AdminRoute>
-            <AddBook/>
-          </AdminRoute>
+        { 
+            path: "add-new-book", 
+            element: <AdminRoute><AddBook/></AdminRoute> 
         },
         {
           path: "edit-book/:id",
@@ -103,10 +110,31 @@ const router = createBrowserRouter([
             <ManageBooks/>
           </AdminRoute>
         },
+        { 
+            path: "orders", 
+            // EmployeeRoute sẽ chặn Admin vào
+            element: <EmployeeRoute><Orders /></EmployeeRoute>
+        },
         {
-          path: "orders",
-          element: <AdminRoute><Orders /></AdminRoute>
-        }
+          path: "manage-books",
+          element: <AdminRoute><ManageBooks/></AdminRoute>
+        },
+        {
+          path: "manage-employees",
+          element: <AdminRoute><ManageEmployees/></AdminRoute>
+        },
+        {
+            path: "manage-banner",
+            element: <AdminRoute><ManageBanner/></AdminRoute>
+        },
+        {
+            path: "manage-settings",
+            element: <AdminRoute><ManageSettings/></AdminRoute>
+        },
+        {
+            path: "manage-category",
+            element: <AdminRoute><ManageCategory/></AdminRoute>
+        },
       ]
     }
   ]);

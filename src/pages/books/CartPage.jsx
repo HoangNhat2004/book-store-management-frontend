@@ -1,43 +1,81 @@
 import React from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom' // Import useNavigate
 import { getImgUrl } from '../../utils/getImgUrl';
 import { clearCart, removeFromCart, updateQuantity } from '../../redux/features/cart/cartSlice';
+import { useAuth } from '../../context/AuthContext';
+import { useGetCartQuery, useUpdateCartItemDBMutation, useClearCartDBMutation } from '../../redux/features/cart/cartApi';
 
 const CartPage = () => {
-    const cartItems = useSelector(state => state.cart.cartItems);
-    const dispatch =  useDispatch()
+    const { currentUser } = useAuth();
+    const dispatch = useDispatch();
+    const navigate = useNavigate(); // Hook điều hướng
 
-    const hasItems = cartItems.length > 0;
+    const localCartItems = useSelector(state => state.cart.cartItems);
+    const { data: dbCart, refetch } = useGetCartQuery(undefined, { skip: !currentUser });
+    
+    const [updateCartDB] = useUpdateCartItemDBMutation();
+    const [clearCartDB] = useClearCartDBMutation();
 
-    const totalPrice =  cartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0).toFixed(2);
+    const finalCartItems = currentUser 
+        ? (dbCart?.items?.map(item => {
+             if (!item.productId) return null;
+             return { ...item.productId, quantity: item.quantity };
+          }).filter(i => i) || [])
+        : localCartItems;
 
-    const handleRemoveFromCart = (product) => {
-        dispatch(removeFromCart(product))
-    }
+    const hasItems = finalCartItems.length > 0;
+    const totalPrice = finalCartItems.reduce((acc, item) => acc + (item.newPrice * (item.quantity || 1)), 0).toFixed(2);
 
-    const handleClearCart  = () => {
-        dispatch(clearCart())
-    }
-
-    const handleIncreaseQuantity = (product) => {
-        // Lấy số lượng hiện tại (hoặc 1 nếu chưa có) và cộng thêm 1
-        const newQuantity = (product.quantity || 1) + 1;
-        // Dispatch action updateQuantity đã import
-        dispatch(updateQuantity({ _id: product._id, quantity: newQuantity }));
-    };
-
-    const handleDecreaseQuantity = (product) => {
-        // Lấy số lượng hiện tại (hoặc 1) và trừ đi 1
-        const newQuantity = (product.quantity || 1) - 1;
-        if (newQuantity > 0) {
-            // Nếu vẫn còn, chỉ cập nhật
-            dispatch(updateQuantity({ _id: product._id, quantity: newQuantity }));
+    const handleRemoveFromCart = async (product) => {
+        if (currentUser) {
+            await updateCartDB({ productId: product._id, quantity: 0 });
+            refetch();
         } else {
-            // Nếu về 0, xóa sản phẩm khỏi giỏ hàng
-            dispatch(removeFromCart(product));
+            dispatch(removeFromCart(product))
+        }
+    }
+
+    const handleClearCart = async () => {
+        if (currentUser) {
+            await clearCartDB();
+            refetch();
+        } else {
+            dispatch(clearCart())
+        }
+    }
+
+    const handleIncreaseQuantity = async (product) => {
+        const newQuantity = (product.quantity || 1) + 1;
+        if (currentUser) {
+            await updateCartDB({ productId: product._id, quantity: newQuantity });
+            refetch();
+        } else {
+            dispatch(updateQuantity({ _id: product._id, quantity: newQuantity }));
         }
     };
+
+    const handleDecreaseQuantity = async (product) => {
+        const newQuantity = (product.quantity || 1) - 1;
+        if (currentUser) {
+            await updateCartDB({ productId: product._id, quantity: newQuantity });
+            refetch();
+        } else {
+            if (newQuantity > 0) {
+                dispatch(updateQuantity({ _id: product._id, quantity: newQuantity }));
+            } else {
+                dispatch(removeFromCart(product));
+            }
+        }
+    };
+
+    // Hàm xử lý Checkout
+    const handleCheckout = () => {
+        if (hasItems) {
+            navigate('/checkout');
+        }
+    }
+
     return (
         <>
             <div className="flex mt-12 h-full flex-col overflow-hidden bg-white shadow-sm border border-subtle rounded-lg">
@@ -45,7 +83,7 @@ const CartPage = () => {
                     <div className="flex items-start justify-between">
                         <h2 className="text-2xl font-heading font-bold text-primary">Shopping cart</h2>
                         <div className="ml-3 flex h-7 items-center ">
-                            {hasItems && ( // Chỉ hiển thị nút Clear nếu có hàng
+                            {hasItems && (
                                 <button
                                     type="button"
                                     onClick={handleClearCart}
@@ -63,7 +101,7 @@ const CartPage = () => {
                                 hasItems ? (
                                     <ul role="list" className="-my-6 divide-y divide-subtle">
                                         {
-                                            cartItems.map((product) => (
+                                            finalCartItems.map((product) => (
                                                 <li key={product?._id} className="flex py-6">
                                                     <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-subtle">
                                                         <img
@@ -81,10 +119,13 @@ const CartPage = () => {
                                                                 </h3>
                                                                 <p className="sm:ml-4 font-heading">${product?.newPrice}</p>
                                                             </div>
-                                                            <p className="mt-1 text-sm text-gray-500 capitalize"><strong>Category: </strong>{product?.category}</p>
+                                                            <p className="mt-1 text-sm text-gray-500 capitalize">
+                                                                <strong>Category: </strong>
+                                                                {/* Lấy name nếu có, hoặc lấy string nếu chưa populate */}
+                                                                {product?.category?.name || product?.category || "Unknown"}
+                                                            </p>
                                                         </div>
                                                         <div className="flex flex-1 flex-wrap items-end justify-between space-y-2 text-sm">
-                                                            {/* Sửa lại Qty */}
                                                             <div className="flex items-center border border-subtle rounded">
                                                                 <button
                                                                     type="button"
@@ -107,8 +148,8 @@ const CartPage = () => {
 
                                                             <div className="flex">
                                                                 <button
-                                                                onClick={() => handleRemoveFromCart(product)}
-                                                                type="button" className="font-medium text-red-600 hover:text-red-500">
+                                                                    onClick={() => handleRemoveFromCart(product)}
+                                                                    type="button" className="font-medium text-red-600 hover:text-red-500">
                                                                     Remove
                                                                 </button>
                                                             </div>
@@ -131,18 +172,18 @@ const CartPage = () => {
                     </div>
                     <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
                     <div className="mt-6">
-                        <Link
-                            to={hasItems ? "/checkout" : "#"}
-                            onClick={(e) => !hasItems && e.preventDefault()}
-                            // Sửa lại nút Checkout
-                            className={`flex items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm ${
+                        {/* SỬA NÚT CHECKOUT THÀNH BUTTON ĐỂ GỌI HÀM HANDLECHECKOUT */}
+                        <button
+                            onClick={handleCheckout}
+                            disabled={!hasItems}
+                            className={`flex w-full items-center justify-center rounded-md border border-transparent px-6 py-3 text-base font-medium text-white shadow-sm ${
                                 hasItems 
                                 ? 'bg-accent hover:bg-opacity-90 cursor-pointer' 
                                 : 'bg-gray-400 cursor-not-allowed'
                             }`}
                         >
                             Checkout
-                        </Link>
+                        </button>
                     </div>
                     <div className="mt-6 flex justify-center text-center text-sm text-gray-500">
                         <Link to="/">

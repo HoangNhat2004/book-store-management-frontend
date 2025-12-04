@@ -1,151 +1,165 @@
-import React, { useEffect } from 'react'
-import InputField from '../addBook/InputField'
-import SelectField from '../addBook/SelectField'
-import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router-dom';
-import { useFetchBookByIdQuery, useUpdateBookMutation } from '../../../redux/features/books/booksApi';
-import Loading from '../../../components/Loading';
+import React, { useEffect } from 'react';
+import { useForm } from "react-hook-form";
+import { useParams, useNavigate } from 'react-router-dom';
+import { useFetchBookByIdQuery, useUpdateBookMutation, useFetchPriceHistoryQuery } from '../../../redux/features/books/booksApi';
+import InputField from '../addBook/InputField';
+// Import hook Category
+import { useFetchAllCategoriesQuery } from '../../../redux/features/category/categoryApi';
 import Swal from 'sweetalert2';
-import axios from 'axios';
-import getBaseUrl from '../../../utils/baseURL';
+import Loading from '../../../components/Loading';
 
 const UpdateBook = () => {
-  // --- (LOGIC GIỮ NGUYÊN) ---
   const { id } = useParams();
+  const navigate = useNavigate();
+  
   const { data: bookData, isLoading, isError, refetch } = useFetchBookByIdQuery(id);
-  const [updateBook] = useUpdateBookMutation();
-  const { register, handleSubmit, setValue, reset } = useForm();
+  const { data: priceHistory = [], refetch: refetchHistory } = useFetchPriceHistoryQuery(id);
+  const { data: categories = [] } = useFetchAllCategoriesQuery(); // Lấy danh mục
+
+  const [updateBook, { isLoading: isUpdating }] = useUpdateBookMutation();
+  const { register, handleSubmit, setValue, formState: { errors } } = useForm();
+
   useEffect(() => {
     if (bookData) {
       setValue('title', bookData.title);
-      setValue('author', bookData.author);
       setValue('description', bookData.description);
-      setValue('category', bookData?.category);
+      // Nếu category là object (do populate) thì lấy _id, nếu là string thì lấy luôn
+      setValue('category', bookData?.category?._id || bookData?.category);
       setValue('trending', bookData.trending);
       setValue('oldPrice', bookData.oldPrice);
       setValue('newPrice', bookData.newPrice);
-      setValue('coverImage', bookData.coverImage)
-      setValue('stock', bookData.stock)
+      setValue('coverImage', bookData.coverImage);
+      setValue('stock', bookData.stock);
+      setValue('author', bookData.author);
     }
-  }, [bookData, setValue])
+  }, [bookData, setValue]);
 
   const onSubmit = async (data) => {
     const updateBookData = {
       title: data.title,
-      author: data.author,
       description: data.description,
       category: data.category,
       trending: data.trending,
       oldPrice: Number(data.oldPrice),
       newPrice: Number(data.newPrice),
-      coverImage: data.coverImage || bookData.coverImage,
+      coverImage: data.coverImage,
+      stock: Number(data.stock),
+      author: data.author,
+      note: "Admin updated price" 
     };
+
     try {
-      await axios.put(`${getBaseUrl()}/api/books/edit/${id}`, updateBookData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      Swal.fire({ title: "Book Updated", text: "Your book is updated successfully!", icon: "success" });
-      await refetch()
+      await updateBook({ id, ...updateBookData }).unwrap();
+      
+      Swal.fire({ 
+          title: "Updated", text: "Book updated successfully!", icon: "success",
+          timer: 1500, showConfirmButton: false 
+      });
+
+      await refetch();
+      await refetchHistory(); 
+      
     } catch (error) {
-      console.log("Failed to update book.");
-      alert("Failed to update book.");
+      console.error("Failed to update book", error);
+      Swal.fire({ title: "Error", text: "Failed to update book", icon: "error" });
     }
-  }
-  // --- (KẾT THÚC LOGIC) ---
-  
-  if (isLoading) return <Loading />
-  if (isError) return <div>Error fetching book data</div>
+  };
+
+  if (isLoading) return <Loading />;
+  if (isError) return <div>Error fetching book data</div>;
 
   return (
-    // --- SỬA GIAO DIỆN ---
-    <div className="max-w-2xl mx-auto md:p-8 p-4 bg-white rounded-lg shadow-sm border border-subtle">
-      <h2 className="text-2xl font-heading font-bold text-ink mb-6">Update Book</h2>
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-gray-800 mb-6">Update Book</h2>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <InputField
-          label="Title"
-          name="title"
-          placeholder="Enter book title"
-          register={register}
-        />
-        <InputField
-          label="Author"
-          name="author"
-          placeholder="Enter author's name"
-          register={register}
-        />
-        <InputField
-          label="Description"
-          name="description"
-          placeholder="Enter book description"
-          type="textarea"
-          register={register}
-        />
-        <SelectField
-          label="Category"
-          name="category"
-          options={[
-            { value: '', label: 'Choose A Category' },
-            { value: 'business', label: 'Business' },
-            { value: 'technology', label: 'Technology' },
-            { value: 'fiction', label: 'Fiction' },
-            { value: 'horror', label: 'Horror' },
-            { value: 'adventure', label: 'Adventure' },
-          ]}
-          register={register}
-        />
-        <div className="mb-4">
-          <label className="inline-flex items-center">
-            <input
-              type="checkbox"
-              {...register('trending')}
-              className="rounded text-primary focus:ring-primary" // Sửa màu
-            />
-            <span className="ml-2 text-sm font-semibold text-ink">Trending</span>
-          </label>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <InputField
-            label="Old Price"
-            name="oldPrice"
-            type="number"
-            placeholder="Old Price"
-            register={register}
-            />
-            <InputField
-            label="New Price"
-            name="newPrice"
-            type="number"
-            placeholder="New Price"
-            register={register}
-            />
-            <InputField
-                label="Stock (Inventory)"
-                name="stock"
-                type="number"
-                placeholder="Quantity in stock"
-                register={register}
-            />
-        </div>
-        {/* Sửa lại Input này (Vì bạn bỏ qua lỗi ảnh, nên ta giữ logic nhập tên tệp) */}
-        <InputField
-          label="Cover Image Name (e.g., book-1.png)"
-          name="coverImage"
-          type="text"
-          placeholder="book-1.png"
-          register={register}
-        />
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <InputField label="Title" name="title" placeholder="Enter book title" register={register} />
+        <InputField label="Author" name="author" placeholder="Enter author name" register={register} />
+        <InputField label="Description" name="description" placeholder="Enter description" type="textarea" register={register} />
 
-        <button type="submit" className="w-full py-3 btn-primary">
-          Update Book
+        {/* --- SELECT CATEGORY ĐỘNG --- */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+                <select
+                    {...register("category", { required: true })}
+                    className="w-full p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary bg-gray-50"
+                >
+                    <option value="">Choose A Category</option>
+                    {categories.map((cat) => (
+                        <option key={cat._id} value={cat._id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div className="flex items-center gap-2 mt-6">
+                <input type="checkbox" {...register('trending')} className="w-4 h-4 text-blue-600 rounded" />
+                <label className="text-gray-700 font-semibold">Trending</label>
+            </div>
+        </div>
+        {/* --------------------------- */}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <InputField label="Old Price" name="oldPrice" type="number" placeholder="Old Price" register={register} />
+            <InputField label="New Price" name="newPrice" type="number" placeholder="New Price" register={register} />
+            <InputField label="Stock" name="stock" type="number" placeholder="Stock" register={register} />
+        </div>
+
+        <InputField label="Cover Image URL" name="coverImage" placeholder="Enter image URL" register={register} />
+
+        <button type="submit" className="w-full bg-primary text-white font-bold py-2 rounded hover:bg-opacity-90">
+          {isUpdating ? 'Updating...' : 'Update Book & View History'}
         </button>
       </form>
-    </div>
-    // --- KẾT THÚC SỬA GIAO DIỆN ---
-  )
-}
 
-export default UpdateBook
+      {/* BẢNG LỊCH SỬ GIÁ (GIỮ NGUYÊN) */}
+      <div className="mt-12 border-t pt-8">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">Price & Promotion History</h3>
+        
+        {priceHistory.length === 0 ? (
+            <div className="p-4 bg-gray-50 rounded text-gray-500 text-center border border-dashed border-gray-300">
+                No price history available yet. Try changing the "New Price" and update.
+            </div>
+        ) : (
+            <div className="overflow-x-auto bg-white rounded-lg border border-gray-200 shadow-sm">
+                <table className="min-w-full text-left text-sm">
+                    <thead className="bg-gray-100 border-b border-gray-200 text-gray-600 uppercase font-semibold">
+                        <tr>
+                            <th className="px-4 py-3">Time</th>
+                            <th className="px-4 py-3">Old Price</th>
+                            <th className="px-4 py-3">New Price (Sale)</th>
+                            <th className="px-4 py-3">Changed By</th>
+                            <th className="px-4 py-3">Note</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                        {priceHistory.map((item) => (
+                            <tr key={item._id} className="hover:bg-gray-50 transition">
+                                <td className="px-4 py-3 text-gray-700">
+                                    {new Date(item.createdAt).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-3 text-gray-500 line-through">
+                                    ${item.oldPrice}
+                                </td>
+                                <td className="px-4 py-3 font-bold text-green-600">
+                                    ${item.newPrice}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                    {item.updatedBy?.username || item.updatedBy?.email || 'Admin'}
+                                </td>
+                                <td className="px-4 py-3 text-gray-500 italic">
+                                    {item.note}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default UpdateBook;

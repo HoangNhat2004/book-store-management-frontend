@@ -9,7 +9,6 @@ function useQuery() {
 }
 
 const ManageBooks = () => {
-    // --- (LOGIC GIỮ NGUYÊN) ---
     const navigate = useNavigate();
     const { data: books, refetch } = useFetchAllBooksQuery()
     const [deleteBook] = useDeleteBookMutation()
@@ -17,6 +16,7 @@ const ManageBooks = () => {
     const query = useQuery();
     const urlSearchQuery = query.get('q');
     const [searchQuery, setSearchQuery] = useState(urlSearchQuery || "");
+    
     useEffect(() => { // Sync URL query to state
         if (urlSearchQuery) { setSearchQuery(urlSearchQuery); }
     }, [urlSearchQuery]);
@@ -27,8 +27,8 @@ const ManageBooks = () => {
             text: `You want to delete "${title}"?`,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonColor: "#E07A5F", // Màu accent
-            cancelButtonColor: "#33312E", // Màu ink
+            confirmButtonColor: "#E07A5F", 
+            cancelButtonColor: "#33312E",
             confirmButtonText: "Yes, delete it!"
         }).then(async (result) => {
             if (result.isConfirmed) {
@@ -43,14 +43,14 @@ const ManageBooks = () => {
         });
     };
     
+    // LOGIC LỌC SÁCH: Thêm cả stock vào để tiện debug nếu cần
     const filteredBooks = books
         ? books.filter(book =>
             (book.title && book.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
             (book.category && book.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase())) // <-- Thêm tìm kiếm theo tác giả
+            (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
         )
         : [];
-    // --- (KẾT THÚC LOGIC) ---
 
     return (
         <section className="py-1 bg-paper">
@@ -64,7 +64,7 @@ const ManageBooks = () => {
                             <div className="relative w-full px-4 max-w-full flex-grow flex-1 text-right">
                                 <input
                                     type="text"
-                                    placeholder="Search by title, category, or author..." // <-- Cập nhật placeholder
+                                    placeholder="Search by title, category, or author..." 
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="border border-subtle rounded-md px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent"
@@ -83,20 +83,22 @@ const ManageBooks = () => {
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Book Title
                                     </th>
-                                    {/* --- 1. THÊM CỘT MỚI: AUTHOR (HEADER) --- */}
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Author
                                     </th>
-                                    {/* --- KẾT THÚC THÊM --- */}
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Category
                                     </th>
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Price
                                     </th>
+                                    
+                                    {/* --- 1. CỘT STOCK --- */}
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                                        Sold
+                                        Stock
                                     </th>
+                                    {/* ------------------- */}
+
                                     <th className="px-6 bg-paper text-ink align-middle border border-subtle py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                                         Actions
                                     </th>
@@ -106,27 +108,35 @@ const ManageBooks = () => {
                             <tbody>
                                 {
                                     filteredBooks && filteredBooks.map((book, index) => (
-                                        <tr key={index} className="hover:bg-paper/60">
+                                        <tr key={index} className="hover:bg-paper/60 transition-colors">
                                             <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left text-ink ">
                                                 {index + 1}
                                             </th>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 font-medium">
                                                 {book.title}
                                             </td>
-                                            {/* --- 2. THÊM CỘT MỚI: AUTHOR (DATA) --- */}
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                                                 {book.author || 'N/A'}
                                             </td>
-                                            {/* --- KẾT THÚC THÊM --- */}
                                             <td className="border-t-0 px-6 align-center border-l-0 border-r-0 text-xs whitespace-nowrap p-4 capitalize">
-                                                {book.category}
+                                                {book.category?.name || book.category || 'Uncategorized'}
                                             </td>
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                                                 ${book.newPrice}
                                             </td>
+                                            
+                                            {/* --- 2. DỮ LIỆU STOCK --- */}
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                                                {book.totalSold || 0}
+                                                <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                                    (book.stock || 0) > 0 
+                                                        ? 'bg-green-100 text-green-800' 
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {book.stock || 0}
+                                                </span>
                                             </td>
+                                            {/* ------------------------ */}
+
                                             <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 space-x-4">
                                                 <Link to={`/dashboard/edit-book/${book._id}`} className="font-medium text-primary hover:text-opacity-80">
                                                     Edit

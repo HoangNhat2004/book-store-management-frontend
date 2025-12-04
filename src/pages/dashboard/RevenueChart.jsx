@@ -7,26 +7,35 @@ import getBaseUrl from '../../utils/baseURL';
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const RevenueChart = () => {
-  // --- (LOGIC LẤY DATA GIỮ NGUYÊN) ---
-  const [revenueData, setRevenueData] = useState([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+  const [revenueData, setRevenueData] = useState(Array(12).fill(0));
   const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
+        // --- SỬA LẠI: Dùng 'token' ---
+        const token = localStorage.getItem('adminToken');
+        // -----------------------------
+        
         const response = await axios.get(`${getBaseUrl()}/api/admin`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
         });
+
         const monthlySales = response.data.monthlySales || [];
         const monthlyRevenue = Array(12).fill(0);
+
         monthlySales.forEach(sale => {
-          const month = parseInt(sale._id.split('-')[1]) - 1; 
-          if (month >= 0 && month < 12) {
-            monthlyRevenue[month] = sale.totalSales;
+          if (sale._id) {
+            const month = parseInt(sale._id.split('-')[1]) - 1; 
+            if (month >= 0 && month < 12) {
+              monthlyRevenue[month] = sale.totalSales;
+            }
           }
         });
+
         setRevenueData(monthlyRevenue);
         setLoading(false);
       } catch (error) {
@@ -37,48 +46,47 @@ const RevenueChart = () => {
     fetchData();
   }, []);
 
-  // --- SỬA LẠI DATA VÀ OPTIONS ---
   const data = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
     datasets: [
       {
         label: 'Revenue (USD)',
         data: revenueData,
-        backgroundColor: 'rgba(4, 93, 93, 0.7)', // <-- SỬA MÀU (primary)
-        borderColor: 'rgba(4, 93, 93, 1)', // <-- SỬA MÀU (primary)
+        backgroundColor: 'rgba(4, 93, 93, 0.7)', // Primary color
+        borderColor: 'rgba(4, 93, 93, 1)',       // Primary color
         borderWidth: 1,
-        borderRadius: 4, // Thêm bo góc
+        borderRadius: 4, 
       },
     ],
   };
 
   const options = {
     responsive: true,
-    maintainAspectRatio: false, // Thêm để chiều cao linh hoạt
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         position: 'top',
         labels: {
-            font: { family: 'Inter' } // Sửa font
+            font: { family: 'Inter, sans-serif' } 
         }
       },
       title: {
-        display: false, // Tắt tiêu đề (đã có ở Dashboard.jsx)
+        display: false, 
       },
       tooltip: {
-        backgroundColor: '#33312E', // Dùng màu 'ink'
-        titleFont: { family: 'Inter', weight: 'bold' },
-        bodyFont: { family: 'Inter' }
+        backgroundColor: '#33312E', 
+        titleFont: { family: 'Inter, sans-serif', weight: 'bold' },
+        bodyFont: { family: 'Inter, sans-serif' }
       }
     },
     scales: {
       y: {
         beginAtZero: true,
         grid: {
-            color: '#E8E4DD' // Dùng màu 'subtle'
+            color: '#E8E4DD' 
         },
         ticks: {
-            font: { family: 'Inter' }
+            font: { family: 'Inter, sans-serif' }
         }
       },
       x: {
@@ -86,24 +94,22 @@ const RevenueChart = () => {
             display: false
         },
         ticks: {
-            font: { family: 'Inter' }
+            font: { family: 'Inter, sans-serif' }
         }
       }
     },
   };
-  // --- KẾT THÚC SỬA ---
 
   if (loading) {
     return (
       <div className="w-full h-64 flex justify-center items-center">
-        <div className="text-gray-500">Loading chart data...</div>
+        <div className="text-gray-500 animate-pulse">Loading chart data...</div>
       </div>
     );
   }
 
   return (
-    // Sửa lại container
-    <div className="w-full h-80 md:h-96"> 
+    <div className="w-full h-80 md:h-96 bg-white p-4 rounded-lg"> 
       <Bar data={data} options={options} />
     </div>
   );

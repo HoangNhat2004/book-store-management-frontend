@@ -5,17 +5,54 @@ import { removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice'
 import { addToCart } from '../../redux/features/cart/cartSlice';
 import { getImgUrl } from '../../utils/getImgUrl';
 
+// --- 1. IMPORT THÊM ---
+import { useAuth } from '../../context/AuthContext';
+import { useAddToCartDBMutation } from '../../redux/features/cart/cartApi';
+import Swal from 'sweetalert2';
+// ---------------------
+
 const WishlistPage = () => {
     const { wishlistItems } = useSelector(state => state.wishlist);
     const dispatch = useDispatch();
+
+    // --- 2. KHAI BÁO HOOK ---
+    const { currentUser } = useAuth();
+    const [addToCartDB] = useAddToCartDBMutation();
+    // -----------------------
 
     const handleRemoveFromWishlist = (product) => {
         dispatch(removeFromWishlist(product));
     };
 
-    const handleAddToCart = (product) => {
-        dispatch(addToCart(product));
+    // --- 3. SỬA HÀM ADD TO CART ---
+    const handleAddToCart = async (product) => {
+        if (currentUser) {
+            // Nếu đã login -> Thêm vào DB
+            try {
+                await addToCartDB({ productId: product._id, quantity: 1 }).unwrap();
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Added to Cart',
+                    showConfirmButton: false,
+                    timer: 1000
+                });
+            } catch (error) {
+                Swal.fire('Error', 'Failed to add to cart', 'error');
+            }
+        } else {
+            // Nếu chưa login -> Thêm vào Local
+            dispatch(addToCart(product));
+            Swal.fire({
+                position: 'top-end',
+                icon: 'success',
+                title: 'Added to Cart',
+                showConfirmButton: false,
+                timer: 1000
+            });
+        }
     };
+    // -----------------------------
 
     return (
         <>
@@ -34,7 +71,7 @@ const WishlistPage = () => {
                                             <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-subtle">
                                                 <img
                                                     alt={product.title}
-                                                    src={getImgUrl(product.coverImage)} // Dùng getImgUrl
+                                                    src={getImgUrl(product.coverImage)}
                                                     className="h-full w-full object-cover object-center"
                                                 />
                                             </div>
@@ -47,7 +84,11 @@ const WishlistPage = () => {
                                                         </h3>
                                                         <p className="sm:ml-4 font-heading">${product?.newPrice}</p>
                                                     </div>
-                                                    <p className="mt-1 text-sm text-gray-500 capitalize"><strong>Category: </strong>{product?.category}</p>
+                                                    {/* Sửa hiển thị Category để tránh lỗi Object */}
+                                                    <p className="mt-1 text-sm text-gray-500 capitalize">
+                                                        <strong>Category: </strong>
+                                                        {product?.category?.name || product?.category || "Unknown"}
+                                                    </p>
                                                 </div>
                                                 <div className="flex flex-1 flex-wrap items-center justify-between space-y-2 text-sm mt-4 gap-4">
                                                     <button

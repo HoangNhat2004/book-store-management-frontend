@@ -2,44 +2,30 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import './App.css'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-// Sửa import (bỏ useAuth vì nó được dùng trong AppContent)
-import { AuthProvide, useAuth } from './context/AuthContext' 
+// Chỉ import useAuth để dùng, KHÔNG import AuthProvide nữa (vì đã có ở main.jsx)
+import { useAuth } from './context/AuthContext' 
 import { useEffect } from 'react' 
 
-// Component nội bộ để truy cập context và router
-const AppContent = () => {
+function App() {
   const { currentUser, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    // Nếu không loading, ĐÃ CÓ user, và đang ở trang login/register
+    // Logic: Nếu đã đăng nhập mà cố vào trang login/register -> Đá về trang chủ
     if (!loading && currentUser && (location.pathname === '/login' || location.pathname === '/register')) {
-      // Tự động chuyển hướng về trang chủ
-      console.log("User detected, navigating to home...");
       navigate('/');
     }
-  }, [currentUser, loading, location, navigate]); // Chạy lại khi các giá trị này thay đổi
+  }, [currentUser, loading, location, navigate]);
 
   return (
     <>
       <Navbar />
       <main className='min-h-screen max-w-screen-2xl mx-auto px-4 py-6 font-body'>
-        {/* Outlet sẽ render các children: Home, Login, Register... */}
+        {/* Outlet sẽ hiển thị các trang con như Home, Cart, Checkout... */}
         <Outlet />
       </main>
       <Footer />
-    </>
-  )
-}
-
-function App() {
-  return (
-    <>
-      {/* AuthProvide bọc AppContent */}
-      <AuthProvide>
-        <AppContent />
-      </AuthProvide>
     </>
   ) 
 }

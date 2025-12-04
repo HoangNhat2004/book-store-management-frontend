@@ -1,8 +1,8 @@
-// src/components/AdminLogin.jsx
 import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { useNavigate } from 'react-router-dom';
 import getBaseUrl from '../utils/baseURL';
+// KHÔNG import useAuth để tránh xung đột session
 
 const AdminLogin = () => {
   const [message, setMessage] = useState("");
@@ -15,44 +15,35 @@ const AdminLogin = () => {
     setMessage("");
 
     try {
-      // 1. Gửi thông tin đăng nhập lên backend
       const response = await fetch(`${getBaseUrl()}/api/auth/admin-login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: data.username,
-          password: data.password,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
 
       const result = await response.json();
 
-      // 2. Nếu backend báo lỗi (sai pass)
       if (!response.ok) {
         throw new Error(result.message || 'Login failed');
       }
 
-      // 3. Nếu thành công
       const { token, user } = result;
 
-      localStorage.setItem('token', token);
+      // --- SỬA: LƯU VÀO adminToken ---
+      localStorage.setItem('adminToken', token); 
       localStorage.setItem('adminUser', JSON.stringify(user));
 
-      // TỰ ĐỘNG ĐĂNG XUẤT SAU 1 GIỜ (Giữ nguyên logic cũ)
       setTimeout(() => {
-        localStorage.removeItem('token');
+        localStorage.removeItem('adminToken');
         localStorage.removeItem('adminUser');
         alert('Session expired! Please login again.');
-        navigate('/admin'); // Sửa thành /admin
+        navigate('/admin'); 
       }, 3600 * 1000);
 
       alert("Admin Login successful!");
       navigate('/dashboard');
 
     } catch (error) {
-      // 4. Hiển thị lỗi từ server (ví dụ: "Invalid username or password")
       setMessage(error.message);
     } finally {
       setLoading(false);

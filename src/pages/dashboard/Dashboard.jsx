@@ -14,22 +14,36 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response =  await axios.get(`${getBaseUrl()}/api/admin`, {
+                // --- SỬA QUAN TRỌNG: Dùng 'token' ---
+                const token = localStorage.getItem('adminToken');
+                
+                if(!token) {
+                    navigate('/admin');
+                    return;
+                }
+
+                const response = await axios.get(`${getBaseUrl()}/api/admin`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
-                })
-
+                });
                 setData(response.data);
                 setLoading(false);
             } catch (error) {
                 console.error('Error:', error);
+                if(error.response && (error.response.status === 401 || error.response.status === 403)) {
+                    // logout nếu token lỗi
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('adminUser');
+                    navigate('/admin');
+                }
+                setLoading(false);
             }
         }
 
         fetchData();
-    }, []);
+    }, [navigate]);
 
     // console.log(data)
 
@@ -95,7 +109,7 @@ const Dashboard = () => {
                   Monthly Revenue
                 </div>
                 <div className="p-4 flex-grow">
-                  <RevenueChart />
+                  <RevenueChart monthlySales={data?.monthlySales} />
                 </div>
               </div>
 

@@ -2,23 +2,44 @@ import React from 'react'
 import { FiShoppingCart } from 'react-icons/fi'
 import { getImgUrl } from '../../utils/getImgUrl'
 import { HiOutlineHeart, HiHeart } from 'react-icons/hi'
-
-import { Link } from'react-router-dom'
-
-import { useDispatch, useSelector } from'react-redux'
+import { Link } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
 import { addToCart } from '../../redux/features/cart/cartSlice'
 import { addToWishlist, removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice'
+// Import thêm
+import { useAuth } from '../../context/AuthContext'
+import { useAddToCartDBMutation } from '../../redux/features/cart/cartApi'
+import Swal from 'sweetalert2'
 
 const BookCard = ({book}) => {
-    const dispatch =  useDispatch();
+    const dispatch = useDispatch();
+    const { currentUser } = useAuth(); // Lấy user hiện tại
+    const [addToCartDB] = useAddToCartDBMutation(); // Hook thêm vào DB
 
     // 4. Lấy wishlist từ Redux
     const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
     // 5. Kiểm tra xem sách này đã có trong wishlist chưa
     const isWishlisted = wishlistItems.some(item => item._id === book._id);
 
-    const handleAddToCart = (product) => {
-        dispatch(addToCart(product))
+    const handleAddToCart = async (product) => {
+        if (currentUser) {
+            // --- KHÁCH ĐÃ LOGIN: Lưu vào DB ---
+            try {
+                await addToCartDB({ productId: product._id, quantity: 1 }).unwrap();
+                Swal.fire({
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Added to Cart',
+                    showConfirmButton: false,
+                    timer: 1000
+                });
+            } catch (error) {
+                Swal.fire('Error', 'Failed to add to cart', 'error');
+            }
+        } else {
+            // --- KHÁCH VÃNG LAI: Lưu Redux ---
+            dispatch(addToCart(product))
+        }
     }
 
     const handleWishlistToggle = (product) => {

@@ -8,28 +8,25 @@ const ordersApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: getBaseUrl(),
     prepareHeaders: async (headers, { getState, endpoint }) => {
-        
-        const adminToken = localStorage.getItem('token'); // Token của Admin
-        const userToken = localStorage.getItem('userToken'); // Token của User (JWT)
+        // --- SỬA: LẤY adminToken ---
+        const adminToken = localStorage.getItem('adminToken'); 
+        const userToken = localStorage.getItem('userToken'); 
         const firebaseUser = auth.currentUser;
         
-        if (endpoint === 'getOrders') {
-            // ADMIN API: Dùng Admin Token
+        // API dành cho Admin/Employee
+        if (endpoint === 'getOrders' || endpoint === 'pushToGHN' || endpoint === 'getAllOrders') {
             if (adminToken) headers.set('Authorization', `Bearer ${adminToken}`);
         }
-        else if (userToken) {
-            // USER API (JWT): Dùng User Token
-            headers.set('Authorization', `Bearer ${userToken}`);
-        }
+        // API dành cho Khách hàng
         else if (firebaseUser) {
-             // USER API (FIREBASE): Dùng Firebase Token
-             
-             // --- BẮT ĐẦU SỬA ---
-             // Xóa 'true' để dùng token đã cache, tránh lỗi quota
-            const idToken = await firebaseUser.getIdToken(); 
-            // --- KẾT THÚC SỬA ---
-            
-            headers.set('Authorization', `Bearer ${idToken}`);
+             try {
+                const idToken = await firebaseUser.getIdToken(); 
+                localStorage.setItem('userToken', idToken);
+                headers.set('Authorization', `Bearer ${idToken}`);
+             } catch (error) { console.error("Failed to get token", error); }
+        }
+        else if (userToken) {
+            headers.set('Authorization', `Bearer ${userToken}`);
         }
         
         return headers;
@@ -37,7 +34,6 @@ const ordersApi = createApi({
   }),
   tagTypes: ['Orders'],
   endpoints: (builder) => ({
-    // 1. Tạo đơn hàng
     createOrder: builder.mutation({
       query: (newOrder) => ({
         url: "/api/orders",
@@ -46,20 +42,14 @@ const ordersApi = createApi({
       }),
       invalidatesTags: ['Orders'],
     }),
-
-    // 2. Lấy đơn theo email (user)
     getOrderByEmail: builder.query({
       query: (email) => `/api/orders/email/${email}`,
       providesTags: ['Orders'],
     }),
-
-    // 3. LẤY TẤT CẢ ĐƠN HÀNG (ADMIN)
     getOrders: builder.query({
       query: () => "/api/orders",
       providesTags: ['Orders'],
     }),
-
-    // 4. Xác nhận thanh toán
     confirmPayment: builder.mutation({
       query: (orderId) => ({
         url: `/api/orders/${orderId}/confirm-payment`,
@@ -67,15 +57,27 @@ const ordersApi = createApi({
       }),
       invalidatesTags: ['Orders'], 
     }),
+
+    // --- THÊM MUTATION NÀY ---
+    pushToGHN: builder.mutation({
+        query: (orderId) => ({
+            // Gọi sang route shipping
+            url: `/api/shipping/create-order`, 
+            method: "POST",
+            body: { orderId }
+        }),
+        invalidatesTags: ['Orders']
+    }),
+    // -------------------------
   }),
 });
 
-// XUẤT TẤT CẢ HOOK
 export const { 
   useCreateOrderMutation, 
   useGetOrderByEmailQuery, 
   useGetOrdersQuery,
-  useConfirmPaymentMutation 
+  useConfirmPaymentMutation,
+  usePushToGHNMutation // <-- Export ra để dùng bên Orders.jsx
 } = ordersApi;
 
 export default ordersApi;
