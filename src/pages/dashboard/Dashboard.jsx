@@ -9,14 +9,13 @@ import RevenueChart from './RevenueChart';
 const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState({});
-    // console.log(data)
     const navigate = useNavigate()
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // --- SỬA QUAN TRỌNG: Dùng 'token' ---
+                // --- SỬA: Lấy adminToken ---
                 const token = localStorage.getItem('adminToken');
-                
                 if(!token) {
                     navigate('/admin');
                     return;
@@ -29,15 +28,14 @@ const Dashboard = () => {
                     },
                 });
                 setData(response.data);
-                setLoading(false);
             } catch (error) {
                 console.error('Error:', error);
-                if(error.response && (error.response.status === 401 || error.response.status === 403)) {
-                    // logout nếu token lỗi
-                    localStorage.removeItem('token');
+                if(error.response?.status === 401 || error.response?.status === 403) {
+                    localStorage.removeItem('adminToken');
                     localStorage.removeItem('adminUser');
                     navigate('/admin');
                 }
+            } finally {
                 setLoading(false);
             }
         }
@@ -45,14 +43,11 @@ const Dashboard = () => {
         fetchData();
     }, [navigate]);
 
-    // console.log(data)
-
     if(loading) return <Loading/>
 
   return (
     <>
-    {/* --- BẮT ĐẦU SỬA GIAO DIỆN --- */}
-     <section className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <section className="grid md:grid-cols-2 xl:grid-cols-4 gap-6">
               {/* Box 1: Products */}
               <div className="flex items-center p-6 bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-primary bg-primary/10 rounded-full mr-6">
@@ -65,6 +60,7 @@ const Dashboard = () => {
                   <span className="block text-gray-500">Products</span>
                 </div>
               </div>
+
               {/* Box 2: Total Sales */}
               <div className="flex items-center p-6 bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-green-600 bg-green-100 rounded-full mr-6">
@@ -77,6 +73,7 @@ const Dashboard = () => {
                   <span className="block text-gray-500">Total Sales</span>
                 </div>
               </div>
+
               {/* Box 3: Trending Books */}
               <div className="flex items-center p-6 bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-accent bg-accent-light rounded-full mr-6">
@@ -89,6 +86,7 @@ const Dashboard = () => {
                   <span className="block text-gray-500">Trending Books</span>
                 </div>
               </div>
+
               {/* Box 4: Total Orders */}
               <div className="flex items-center p-6 bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="inline-flex flex-shrink-0 items-center justify-center h-16 w-16 text-blue-600 bg-blue-100 rounded-full mr-6">
@@ -103,7 +101,7 @@ const Dashboard = () => {
             
             <section className="grid md:grid-cols-3 gap-6 mt-6">
               
-              {/* CỘT 1: BIỂU ĐỒ DOANH THU (2/3) */}
+              {/* CỘT 1: BIỂU ĐỒ DOANH THU */}
               <div className="md:col-span-2 flex flex-col bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="px-6 py-5 font-semibold font-heading text-ink border-b border-subtle">
                   Monthly Revenue
@@ -113,7 +111,7 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              {/* CỘT 2: TOP USERS (1/3) */}
+              {/* CỘT 2: TOP USERS */}
               <div className="bg-white shadow-sm border border-subtle rounded-lg">
                 <div className="flex items-center justify-between px-6 py-5 font-semibold font-heading text-ink border-b border-subtle">
                   <span>Top Users by Average Order</span>
@@ -123,7 +121,7 @@ const Dashboard = () => {
                     {
                        data.topUsers && data.topUsers.length > 0 ? (
                          data.topUsers.map((user, index) => (
-                           <li key={user._id || index} className="flex items-center">
+                           <li key={user.email || index} className="flex items-center">
                              <div className="h-10 w-10 mr-3 bg-gray-100 rounded-full overflow-hidden border border-subtle">
                                <img 
                                 src={user.photoURL || `https://randomuser.me/api/portraits/lego/${index % 9}.jpg`} 
@@ -131,7 +129,10 @@ const Dashboard = () => {
                                 className="h-full w-full object-cover"
                                />
                              </div>
-                             <span className="text-ink font-medium">{user.name || user._id}</span>
+                             <div className='flex-1 min-w-0'>
+                                 <p className="text-sm font-medium text-ink truncate">{user.name || user.email}</p>
+                                 <p className="text-xs text-gray-500">{user.totalOrders} orders</p>
+                             </div>
                              <span className="ml-auto font-heading font-bold text-primary">${user.averageOrderValue.toFixed(2)}</span>
                            </li>
                          ))
@@ -147,7 +148,6 @@ const Dashboard = () => {
             <section className="text-center mt-8 font-semibold text-gray-400">
               <p>Book Store Management Project - Developed by Group SOA-132</p>
             </section>
-    {/* --- KẾT THÚC SỬA GIAO DIỆN --- */}
     </>
   )
 }

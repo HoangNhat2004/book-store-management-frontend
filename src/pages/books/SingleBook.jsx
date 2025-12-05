@@ -7,53 +7,60 @@ import { addToCart } from '../../redux/features/cart/cartSlice';
 import { useFetchBookByIdQuery } from '../../redux/features/books/booksApi';
 import { addToWishlist, removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice';
 import { getImgUrl } from '../../utils/getImgUrl';
-
-// --- 1. IMPORT THÊM ---
 import { useAuth } from '../../context/AuthContext';
-import { useAddToCartDBMutation } from '../../redux/features/cart/cartApi';
+import { useAddToCartDBMutation, useGetCartQuery } from '../../redux/features/cart/cartApi';
 import Swal from 'sweetalert2';
-// ---------------------
 
 const SingleBook = () => {
     const {id} = useParams();
     const {data: book, isLoading, isError} = useFetchBookByIdQuery(id);
     const dispatch =  useDispatch();
-
-    // --- 2. KHAI BÁO HOOK ---
     const { currentUser } = useAuth();
     const [addToCartDB] = useAddToCartDBMutation();
-    // -----------------------
 
     const wishlistItems = useSelector(state => state.wishlist.wishlistItems);
     const isWishlisted = book ? wishlistItems.some(item => item._id === book._id) : false;
 
-    // --- 3. SỬA HÀM ADD TO CART ---
+    // --- LẤY GIỎ HÀNG ĐỂ CHECK ---
+    const localCartItems = useSelector(state => state.cart.cartItems);
+    const { data: dbCart } = useGetCartQuery(undefined, { skip: !currentUser });
+
+    const getCurrentQty = () => {
+        if (currentUser && dbCart) {
+            const item = dbCart.items.find(i => i.productId._id === book._id || i.productId === book._id);
+            return item ? item.quantity : 0;
+        } else {
+            const item = localCartItems.find(i => i._id === book._id);
+            return item ? item.quantity : 0;
+        }
+    }
+    
     const handleAddToCart = async (product) => {
+        const currentQty = getCurrentQty();
+
+        if (currentQty + 1 > product.stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Reached',
+                text: `You already have ${currentQty}. Max is ${product.stock}.`,
+                showConfirmButton: false, timer: 2000
+            });
+            return;
+        }
+
         if (currentUser) {
             try {
                 await addToCartDB({ productId: product._id, quantity: 1 }).unwrap();
-                Swal.fire({
-                    position: 'top-end',
-                    icon: 'success',
-                    title: 'Added to Cart',
-                    showConfirmButton: false,
-                    timer: 1000
-                });
-            } catch (error) {
-                Swal.fire('Error', 'Failed to add to cart', 'error');
+                Swal.fire({ position: 'top-end', icon: 'success', title: 'Added to Cart', showConfirmButton: false, timer: 1000 });
+            } catch (error) { 
+                // Bắt lỗi từ backend nếu có
+                Swal.fire('Limit Reached', error?.data?.message || 'Failed to add', 'error'); 
             }
         } else {
             dispatch(addToCart(product));
-            Swal.fire({
-                position: 'top-end',
-                icon: 'success',
-                title: 'Added to Cart',
-                showConfirmButton: false,
-                timer: 1000
-            });
+            Swal.fire({ position: 'top-end', icon: 'success', title: 'Added to Cart', showConfirmButton: false, timer: 1000 });
         }
     }
-    // -----------------------------
 
     const handleWishlistToggle = (product) => {
         if (isWishlisted) {
@@ -89,6 +96,12 @@ const SingleBook = () => {
                         </span>
                     </p>
                 </div>
+                
+                <div className="mb-4">
+                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${book.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {book.stock > 0 ? `In Stock: ${book.stock}` : 'Out of Stock'}
+                    </span>
+                </div>
 
                 <div className="border-t border-subtle pt-4 mb-6">
                     <p className="text-gray-600 mb-2"><strong>Author:</strong> {book.author || 'N/A'}</p>
@@ -105,9 +118,10 @@ const SingleBook = () => {
                 <div className="flex items-center gap-3">
                     <button 
                         onClick={() => handleAddToCart(book)} 
-                        className="btn-primary py-3 px-8 flex-grow flex items-center justify-center gap-2 ">
+                        disabled={book.stock <= 0}
+                        className={`btn-primary py-3 px-8 flex-grow flex items-center justify-center gap-2 ${book.stock <= 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                         <FiShoppingCart className="" />
-                        <span>Add to Cart</span>
+                        <span>{book.stock > 0 ? 'Add to Cart' : 'Out of Stock'}</span>
                     </button>
                     <button
                         onClick={() => handleWishlistToggle(book)}

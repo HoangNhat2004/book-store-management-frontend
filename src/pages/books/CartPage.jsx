@@ -46,6 +46,24 @@ const CartPage = () => {
     }
 
     const handleIncreaseQuantity = async (product) => {
+        // 1. Kiểm tra nếu sản phẩm không có thông tin stock (phòng hờ)
+        if (!product.stock && product.stock !== 0) {
+             // Nếu không có trường stock, tạm thời cho tăng (hoặc chặn tùy bạn)
+             // Ở đây giả sử luôn có stock nhờ populate
+        }
+
+        // 2. CHẶN TĂNG NẾU ĐẠT GIỚI HẠN
+        // product.quantity là số lượng đang có trong giỏ
+        if ((product.quantity || 1) >= product.stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Max Quantity Reached',
+                text: `Sorry, we only have ${product.stock} items left in stock!`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+            return; // Dừng lại ngay, không chạy lệnh tăng bên dưới
+        }
         const newQuantity = (product.quantity || 1) + 1;
         if (currentUser) {
             await updateCartDB({ productId: product._id, quantity: newQuantity });

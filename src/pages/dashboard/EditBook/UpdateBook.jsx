@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { useParams, useNavigate } from 'react-router-dom';
 import { useFetchBookByIdQuery, useUpdateBookMutation, useFetchPriceHistoryQuery } from '../../../redux/features/books/booksApi';
@@ -14,25 +14,42 @@ const UpdateBook = () => {
   
   const { data: bookData, isLoading, isError, refetch } = useFetchBookByIdQuery(id);
   const { data: priceHistory = [], refetch: refetchHistory } = useFetchPriceHistoryQuery(id);
-  const { data: categories = [] } = useFetchAllCategoriesQuery(); // Lấy danh mục
+  const { data: categories = [] } = useFetchAllCategoriesQuery(); 
 
   const [updateBook, { isLoading: isUpdating }] = useUpdateBookMutation();
   const { register, handleSubmit, setValue, formState: { errors } } = useForm();
+
+  // --- 1. THÊM STATE LƯU TÊN ẢNH ---
+  const [imageFileName, setImageFileName] = useState('');
+  // --------------------------------
 
   useEffect(() => {
     if (bookData) {
       setValue('title', bookData.title);
       setValue('description', bookData.description);
-      // Nếu category là object (do populate) thì lấy _id, nếu là string thì lấy luôn
       setValue('category', bookData?.category?._id || bookData?.category);
       setValue('trending', bookData.trending);
       setValue('oldPrice', bookData.oldPrice);
       setValue('newPrice', bookData.newPrice);
+      
+      // --- 2. SET GIÁ TRỊ ẢNH CŨ ---
       setValue('coverImage', bookData.coverImage);
+      setImageFileName(bookData.coverImage); // Hiển thị tên ảnh cũ
+      // ----------------------------
+      
       setValue('stock', bookData.stock);
       setValue('author', bookData.author);
     }
   }, [bookData, setValue]);
+
+  // --- 3. HÀM XỬ LÝ CHỌN FILE (Giống AddBook) ---
+  const handleFileChange = (e) => {
+      const file = e.target.files[0];
+      if(file) {
+          setImageFileName(file.name);
+      }
+  }
+  // ---------------------------------------------
 
   const onSubmit = async (data) => {
     const updateBookData = {
@@ -42,7 +59,9 @@ const UpdateBook = () => {
       trending: data.trending,
       oldPrice: Number(data.oldPrice),
       newPrice: Number(data.newPrice),
-      coverImage: data.coverImage,
+      // --- 4. GỬI TÊN FILE ẢNH ---
+      coverImage: imageFileName, // Dùng state imageFileName thay vì data.coverImage
+      // --------------------------
       stock: Number(data.stock),
       author: data.author,
       note: "Admin updated price" 
@@ -77,7 +96,6 @@ const UpdateBook = () => {
         <InputField label="Author" name="author" placeholder="Enter author name" register={register} />
         <InputField label="Description" name="description" placeholder="Enter description" type="textarea" register={register} />
 
-        {/* --- SELECT CATEGORY ĐỘNG --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
@@ -98,7 +116,6 @@ const UpdateBook = () => {
                 <label className="text-gray-700 font-semibold">Trending</label>
             </div>
         </div>
-        {/* --------------------------- */}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <InputField label="Old Price" name="oldPrice" type="number" placeholder="Old Price" register={register} />
@@ -106,14 +123,28 @@ const UpdateBook = () => {
             <InputField label="Stock" name="stock" type="number" placeholder="Stock" register={register} />
         </div>
 
-        <InputField label="Cover Image URL" name="coverImage" placeholder="Enter image URL" register={register} />
+        {/* --- 5. THAY INPUT TEXT BẰNG INPUT FILE --- */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Cover Image</label>
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+          {imageFileName && (
+              <p className="text-sm text-green-600 mt-2">
+                  Current/Selected Image: <strong>{imageFileName}</strong>
+              </p>
+          )}
+        </div>
+        {/* ----------------------------------------- */}
 
         <button type="submit" className="w-full bg-primary text-white font-bold py-2 rounded hover:bg-opacity-90">
           {isUpdating ? 'Updating...' : 'Update Book & View History'}
         </button>
       </form>
 
-      {/* BẢNG LỊCH SỬ GIÁ (GIỮ NGUYÊN) */}
       <div className="mt-12 border-t pt-8">
         <h3 className="text-xl font-bold text-gray-800 mb-4">Price & Promotion History</h3>
         

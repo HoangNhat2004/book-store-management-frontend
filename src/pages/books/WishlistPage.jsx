@@ -4,55 +4,69 @@ import { Link } from 'react-router-dom';
 import { removeFromWishlist } from '../../redux/features/wishlist/wishlistSlice';
 import { addToCart } from '../../redux/features/cart/cartSlice';
 import { getImgUrl } from '../../utils/getImgUrl';
-
-// --- 1. IMPORT THÊM ---
 import { useAuth } from '../../context/AuthContext';
-import { useAddToCartDBMutation } from '../../redux/features/cart/cartApi';
+import { useAddToCartDBMutation, useGetCartQuery } from '../../redux/features/cart/cartApi';
 import Swal from 'sweetalert2';
-// ---------------------
 
 const WishlistPage = () => {
     const { wishlistItems } = useSelector(state => state.wishlist);
     const dispatch = useDispatch();
-
-    // --- 2. KHAI BÁO HOOK ---
     const { currentUser } = useAuth();
     const [addToCartDB] = useAddToCartDBMutation();
-    // -----------------------
+    
+    // Lấy giỏ hàng hiện tại để check số lượng (giống BookCard)
+    const localCartItems = useSelector(state => state.cart.cartItems);
+    const { data: dbCart } = useGetCartQuery(undefined, { skip: !currentUser });
+
+    const getCurrentQty = (productId) => {
+        if (currentUser && dbCart) {
+            const item = dbCart.items.find(i => i.productId._id === productId || i.productId === productId);
+            return item ? item.quantity : 0;
+        } else {
+            const item = localCartItems.find(i => i._id === productId);
+            return item ? item.quantity : 0;
+        }
+    }
 
     const handleRemoveFromWishlist = (product) => {
         dispatch(removeFromWishlist(product));
     };
 
-    // --- 3. SỬA HÀM ADD TO CART ---
     const handleAddToCart = async (product) => {
+        const currentQty = getCurrentQty(product._id);
+        
+        // 1. Kiểm tra Stock trước
+        if (currentQty + 1 > product.stock) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Out of Stock Limit',
+                text: `Cannot add more. You have ${currentQty}, only ${product.stock} available.`,
+                showConfirmButton: false, timer: 2000
+            });
+            return;
+        }
+
+        // 2. Thêm vào giỏ
         if (currentUser) {
-            // Nếu đã login -> Thêm vào DB
             try {
                 await addToCartDB({ productId: product._id, quantity: 1 }).unwrap();
                 Swal.fire({
-                    position: 'top-end',
-                    icon: 'success',
-                    title: 'Added to Cart',
-                    showConfirmButton: false,
-                    timer: 1000
+                    position: 'top-end', icon: 'success', title: 'Added to Cart',
+                    showConfirmButton: false, timer: 1000
                 });
             } catch (error) {
-                Swal.fire('Error', 'Failed to add to cart', 'error');
+                // Hiển thị lỗi chi tiết từ Backend
+                const msg = error?.data?.message || 'Failed to add to cart';
+                Swal.fire('Error', msg, 'error');
             }
         } else {
-            // Nếu chưa login -> Thêm vào Local
             dispatch(addToCart(product));
             Swal.fire({
-                position: 'top-end',
-                icon: 'success',
-                title: 'Added to Cart',
-                showConfirmButton: false,
-                timer: 1000
+                position: 'top-end', icon: 'success', title: 'Added to Cart',
+                showConfirmButton: false, timer: 1000
             });
         }
     };
-    // -----------------------------
 
     return (
         <>
@@ -84,7 +98,7 @@ const WishlistPage = () => {
                                                         </h3>
                                                         <p className="sm:ml-4 font-heading">${product?.newPrice}</p>
                                                     </div>
-                                                    {/* Sửa hiển thị Category để tránh lỗi Object */}
+                                                    
                                                     <p className="mt-1 text-sm text-gray-500 capitalize">
                                                         <strong>Category: </strong>
                                                         {product?.category?.name || product?.category || "Unknown"}
@@ -93,10 +107,12 @@ const WishlistPage = () => {
                                                 <div className="flex flex-1 flex-wrap items-center justify-between space-y-2 text-sm mt-4 gap-4">
                                                     <button
                                                         onClick={() => handleAddToCart(product)}
+                                                        // Nếu hết hàng thì disable nút luôn cho chắc
+                                                        disabled={product.stock <= 0}
                                                         type="button"
-                                                        className="font-medium text-primary hover:text-opacity-80"
+                                                        className={`font-medium ${product.stock <= 0 ? 'text-gray-400 cursor-not-allowed' : 'text-primary hover:text-opacity-80'}`}
                                                     >
-                                                        Add to Cart
+                                                        {product.stock > 0 ? 'Add to Cart' : 'Out of Stock'}
                                                     </button>
                                                     <button
                                                         onClick={() => handleRemoveFromWishlist(product)}

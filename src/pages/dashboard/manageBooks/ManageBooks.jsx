@@ -45,11 +45,16 @@ const ManageBooks = () => {
     
     // LOGIC LỌC SÁCH: Thêm cả stock vào để tiện debug nếu cần
     const filteredBooks = books
-        ? books.filter(book =>
-            (book.title && book.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (book.category && book.category.toLowerCase().includes(searchQuery.toLowerCase())) ||
-            (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
-        )
+        ? books.filter(book => {
+            // Lấy tên Category an toàn (dù là object hay string)
+            const categoryName = book.category?.name || book.category || "";
+            
+            return (
+                (book.title && book.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (categoryName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (book.author && book.author.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+        })
         : [];
 
     return (
